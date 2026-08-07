@@ -1,0 +1,96 @@
+:root {
+  --preto: #0a0a0a;
+  --preto2: #151515;
+  --preto3: #1e1e1e;
+  --dourado: #d4af37;
+  --dourado-claro: #f0d878;
+  --dourado-escuro: #a8842a;
+  --texto: #f2ead9;
+  --texto2: #b8ac8e;
+  --borda: rgba(212, 175, 55, 0.25);
+  --radius: 10px;
+  --erro: #e06666;
+  --sucesso: #7bc47f;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: var(--preto);
+  color: var(--texto);
+}
+
+h1, h2, h3, h4 {
+  font-family: Georgia, 'Times New Roman', serif;
+  color: var(--dourado);
+  margin: 0;
+}
+
+a { color: var(--dourado); }
+
+input, select, textarea {
+  width: 100%;
+  padding: 11px 13px;
+  border-radius: var(--radius);
+  border: 1px solid var(--borda);
+  background: var(--preto2);
+  color: var(--texto);
+  font-size: 14px;
+  outline: none;
+  transition: border-color .15s;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--dourado); }
+input::placeholder { color: var(--texto2); }
+
+label {
+  display: block;
+  font-size: 12px;
+  color: var(--texto2);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+button {
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.btn {
+  padding: 11px 20px;
+  border-radius: var(--radius);
+  border: 1px solid var(--dourado);
+  background: var(--dourado);
+  color: #16130a;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all .15s;
+}
+.btn:hover { background: var(--dourado-claro); border-color: var(--dourado-claro); }
+.btn:disabled { opacity: .6; cursor: default; }
+
+.btn-outline {
+  background: transparent;
+  color: var(--dourado);
+  border: 1px solid var(--borda);
+}
+.btn-outline:hover { border-color: var(--dourado); background: rgba(212,175,55,.08); }
+
+.card {
+  background: var(--preto2);
+  border: 1px solid var(--borda);
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.erro-msg {
+  background: rgba(224, 102, 102, .12);
+  border: 1px solid rgba(224, 102, 102, .4);
+  color: var(--erro);
+  padding: 10px 13px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  margin-top: 12px;
+}
