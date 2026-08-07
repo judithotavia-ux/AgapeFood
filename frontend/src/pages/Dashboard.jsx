@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import AdminLayout from '../layouts/AdminLayout';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -40,11 +41,12 @@ export default function Dashboard() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 20 }}>
             <CartaoStat label="Pedidos hoje" valor={resumo?.pedidosHoje ?? '—'} icone="🛒" />
             <CartaoStat label="Faturamento hoje" valor={resumo ? `R$ ${resumo.faturamentoHoje.toFixed(2)}` : '—'} icone="💰" />
+            <CartaoStat label="Pedidos pendentes" valor={resumo?.pedidosPendentes ?? '—'} icone="⏳" />
             <CartaoStat label="Equipe" valor={resumo?.totalUsuariosEmpresa ?? '—'} icone="👥" />
           </div>
-          <div className="card" style={{ fontSize: 13, color: 'var(--texto2)' }}>
-            🚧 {resumo?.aviso || 'Os módulos de Cardápio, Pedidos e Delivery chegam nas próximas fases.'}
-          </div>
+          <Link to="/pedidos" className="card" style={{ display: 'block', fontSize: 13, color: 'var(--dourado)', textDecoration: 'none' }}>
+            🛒 Ver todos os pedidos →
+          </Link>
         </>
       )}
     </AdminLayout>

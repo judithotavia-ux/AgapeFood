@@ -5,6 +5,8 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Cardapio from './pages/Cardapio';
 import CardapioPublico from './pages/CardapioPublico';
+import Pedidos from './pages/Pedidos';
+import NovoPedido from './pages/NovoPedido';
 
 export default function App() {
   return (
@@ -26,6 +28,22 @@ export default function App() {
             element={
               <RotaProtegida>
                 <Cardapio />
+              </RotaProtegida>
+            }
+          />
+          <Route
+            path="/pedidos"
+            element={
+              <RotaProtegida>
+                <Pedidos />
+              </RotaProtegida>
+            }
+          />
+          <Route
+            path="/pedidos/novo"
+            element={
+              <RotaProtegida>
+                <NovoPedido />
               </RotaProtegida>
             }
           />

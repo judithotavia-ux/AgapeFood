@@ -17,12 +17,26 @@ async function resumo(req, res) {
     ? await prisma.usuario.count({ where: { empresaId } })
     : 0;
 
+  const inicioDoDia = new Date();
+  inicioDoDia.setHours(0, 0, 0, 0);
+
+  const pedidosHojeLista = empresaId
+    ? await prisma.pedido.findMany({
+        where: { empresaId, criadoEm: { gte: inicioDoDia }, status: { not: 'CANCELADO' } },
+        select: { valorTotal: true, status: true }
+      })
+    : [];
+
+  const pedidosHoje = pedidosHojeLista.length;
+  const faturamentoHoje = pedidosHojeLista.reduce((soma, p) => soma + Number(p.valorTotal), 0);
+  const pedidosPendentes = pedidosHojeLista.filter((p) => !['ENTREGUE', 'CANCELADO'].includes(p.status)).length;
+
   return res.json({
     escopo: 'empresa',
     totalUsuariosEmpresa,
-    pedidosHoje: 0,
-    faturamentoHoje: 0,
-    aviso: 'Módulo de pedidos ainda será construído na Fase 3.'
+    pedidosHoje,
+    faturamentoHoje,
+    pedidosPendentes
   });
 }
 

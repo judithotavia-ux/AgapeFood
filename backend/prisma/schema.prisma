@@ -14,6 +14,29 @@ enum PapelUsuario {
   FUNCIONARIO
 }
 
+enum TipoPedido {
+  DELIVERY
+  RETIRADA
+  BALCAO
+  MESA
+}
+
+enum StatusPedido {
+  RECEBIDO
+  PREPARANDO
+  PRONTO
+  SAIU_PARA_ENTREGA
+  ENTREGUE
+  CANCELADO
+}
+
+enum FormaPagamento {
+  PIX
+  CARTAO
+  DINHEIRO
+  VALE_ALIMENTACAO
+}
+
 model Empresa {
   id        String   @id @default(uuid())
   nome      String
@@ -26,6 +49,9 @@ model Empresa {
   usuarios   Usuario[]
   categorias Categoria[]
   produtos   Produto[]
+  pedidos    Pedido[]
+  mesas      Mesa[]
+  contadorPedido ContadorPedido?
 
   @@map("empresas")
 }
@@ -79,6 +105,7 @@ model Produto {
   categoriaId String
   categoria   Categoria @relation(fields: [categoriaId], references: [id])
   adicionais  Adicional[]
+  pedidoItens PedidoItem[]
 
   @@map("produtos")
 }
@@ -93,4 +120,69 @@ model Adicional {
   produto   Produto @relation(fields: [produtoId], references: [id], onDelete: Cascade)
 
   @@map("adicionais")
+}
+
+model ContadorPedido {
+  id            String @id @default(uuid())
+  ultimoNumero  Int    @default(0)
+
+  empresaId String  @unique
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+
+  @@map("contadores_pedido")
+}
+
+model Mesa {
+  id         String  @id @default(uuid())
+  numero     Int
+  capacidade Int     @default(4)
+  ativo      Boolean @default(true)
+
+  empresaId String
+  empresa   Empresa  @relation(fields: [empresaId], references: [id])
+  pedidos   Pedido[]
+
+  @@unique([empresaId, numero])
+  @@map("mesas")
+}
+
+model Pedido {
+  id               String         @id @default(uuid())
+  numero           Int
+  tipo             TipoPedido
+  status           StatusPedido   @default(RECEBIDO)
+  clienteNome      String?
+  clienteTelefone  String?
+  clienteEndereco  String?        @db.Text
+  formaPagamento   FormaPagamento?
+  taxaEntrega      Decimal        @default(0) @db.Decimal(10, 2)
+  valorTotal       Decimal        @db.Decimal(10, 2)
+  observacoes      String?        @db.Text
+  criadoEm         DateTime       @default(now())
+  atualizadoEm     DateTime       @updatedAt
+
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+  mesaId    String?
+  mesa      Mesa?   @relation(fields: [mesaId], references: [id])
+
+  itens PedidoItem[]
+
+  @@map("pedidos")
+}
+
+model PedidoItem {
+  id             String  @id @default(uuid())
+  nomeProduto    String
+  precoUnitario  Decimal @db.Decimal(10, 2)
+  quantidade     Int     @default(1)
+  observacoes    String? @db.Text
+  adicionaisJson String? @db.Text
+
+  pedidoId  String
+  pedido    Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  produtoId String?
+  produto   Produto? @relation(fields: [produtoId], references: [id])
+
+  @@map("pedido_itens")
 }
