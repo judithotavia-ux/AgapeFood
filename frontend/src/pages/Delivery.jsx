@@ -2,11 +2,14 @@ import { useEffect, useState } from 'react';
 import AdminLayout from '../layouts/AdminLayout';
 import Modal from '../components/Modal';
 import * as deliveryService from '../services/deliveryService';
+import { useAuth } from '../context/AuthContext';
 import { CANAL_LABEL, CANAL_ROTA_WEBHOOK, fmtPreco } from '../utils/pedidoConstantes';
 
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:3333/api').replace(/\/api$/, '');
 
 export default function Delivery() {
+  const { usuario } = useAuth();
+  const empresaSlug = usuario?.empresa?.slug || 'sua-empresa';
   const [canais, setCanais] = useState([]);
   const [motoboys, setMotoboys] = useState([]);
   const [ganhos, setGanhos] = useState([]);
@@ -120,10 +123,10 @@ export default function Delivery() {
                   <div style={{ display: 'flex', gap: 6 }}>
                     <input
                       readOnly
-                      value={`${API_BASE}/api/webhooks/${CANAL_ROTA_WEBHOOK[c.tipo]}/SEU-SLUG?token=${c.webhookToken}`}
+                      value={`${API_BASE}/api/webhooks/${CANAL_ROTA_WEBHOOK[c.tipo]}/${empresaSlug}?token=${c.webhookToken}`}
                       style={{ fontSize: 10, padding: '6px 8px' }}
                     />
-                    <button type="button" className="btn-outline" style={{ padding: '4px 10px', fontSize: 11, borderRadius: 6 }} onClick={() => copiar(`${API_BASE}/api/webhooks/${CANAL_ROTA_WEBHOOK[c.tipo]}/SEU-SLUG?token=${c.webhookToken}`)}>Copiar</button>
+                    <button type="button" className="btn-outline" style={{ padding: '4px 10px', fontSize: 11, borderRadius: 6 }} onClick={() => copiar(`${API_BASE}/api/webhooks/${CANAL_ROTA_WEBHOOK[c.tipo]}/${empresaSlug}?token=${c.webhookToken}`)}>Copiar</button>
                   </div>
                 </div>
               )}
