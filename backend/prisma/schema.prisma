@@ -60,6 +60,21 @@ enum TipoCanalEntrega {
   NOVENTA_NOVE_FOOD
 }
 
+enum TipoEmpresa {
+  RESTAURANTE
+  LANCHONETE
+  PIZZARIA
+  HAMBURGUERIA
+  CAFETERIA
+  ACAITERIA
+  PADARIA
+  SORVETERIA
+  FOOD_TRUCK
+  DOCERIA
+  MARMITARIA
+  OUTRO
+}
+
 model Empresa {
   id        String   @id @default(uuid())
   nome      String
@@ -68,6 +83,37 @@ model Empresa {
   corPrimaria String @default("#D4AF37")
   ativo     Boolean  @default(true)
   criadoEm  DateTime @default(now())
+
+  // Aba 1 - Dados da empresa
+  razaoSocial         String?
+  cnpj                String?      @unique
+  inscricaoEstadual   String?
+  inscricaoMunicipal  String?
+  dataFundacao        DateTime?
+  tipoEmpresa         TipoEmpresa? @default(OUTRO)
+  regimeTributario    String?
+  ramoAtividade       String?
+  descricao           String?      @db.Text
+
+  // Aba 2 - Endereco
+  cep          String?
+  endereco     String?
+  numero       String?
+  complemento  String?
+  bairro       String?
+  cidade       String?
+  estado       String?
+  pais         String?  @default("Brasil")
+
+  // Aba 3 - Contatos
+  telefone   String?
+  whatsapp   String?
+  emailContato String?
+  site       String?
+  instagram  String?
+  facebook   String?
+  tiktok     String?
+  youtube    String?
 
   usuarios   Usuario[]
   categorias Categoria[]
@@ -93,6 +139,12 @@ model Usuario {
   ativo     Boolean      @default(true)
   criadoEm  DateTime     @default(now())
   ultimoLoginEm DateTime?
+
+  cpf            String?   @unique
+  rg             String?
+  dataNascimento DateTime?
+  telefone       String?
+  fotoUrl        String?
 
   empresaId String?
   empresa   Empresa? @relation(fields: [empresaId], references: [id])

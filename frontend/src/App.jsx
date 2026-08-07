@@ -11,6 +11,7 @@ import Cozinha from './pages/Cozinha';
 import Caixa from './pages/Caixa';
 import Salao from './pages/Salao';
 import Delivery from './pages/Delivery';
+import CadastroEmpresa from './pages/CadastroEmpresa';
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/cadastro-empresa" element={<CadastroEmpresa />} />
           <Route path="/cardapio/:slug" element={<CardapioPublico />} />
           <Route
             path="/dashboard"

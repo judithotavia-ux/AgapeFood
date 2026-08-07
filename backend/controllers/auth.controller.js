@@ -63,4 +63,4 @@ async function me(req, res) {
   });
 }
 
-module.exports = { login, me };
+module.exports = { login, me, gerarToken };

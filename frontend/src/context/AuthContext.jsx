@@ -32,13 +32,20 @@ export function AuthProvider({ children }) {
     return dados;
   }
 
+  async function entrarComToken(token) {
+    authService.salvarToken(token);
+    const dados = await authService.buscarUsuarioLogado();
+    setUsuario(dados);
+    return dados;
+  }
+
   function sair() {
     authService.logout();
     setUsuario(null);
   }
 
   return (
-    <AuthContext.Provider value={{ usuario, carregando, entrar, sair }}>
+    <AuthContext.Provider value={{ usuario, carregando, entrar, entrarComToken, sair }}>
       {children}
     </AuthContext.Provider>
   );

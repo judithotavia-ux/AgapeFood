@@ -6,6 +6,10 @@ export async function login(email, senha) {
   return data;
 }
 
+export function salvarToken(token) {
+  localStorage.setItem('agapefood_token', token);
+}
+
 export async function buscarUsuarioLogado() {
   const { data } = await api.get('/auth/me');
   return data;

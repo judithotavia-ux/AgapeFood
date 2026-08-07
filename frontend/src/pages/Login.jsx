@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
@@ -56,6 +56,10 @@ export default function Login() {
 
         <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--texto2)', marginTop: 20 }}>
           Acesso demo: admin@agapefood.com / agape123
+        </div>
+
+        <div style={{ textAlign: 'center', fontSize: 12.5, marginTop: 18, paddingTop: 18, borderTop: '1px solid var(--borda)' }}>
+          Ainda não tem conta? <Link to="/cadastro-empresa" style={{ color: 'var(--dourado)', fontWeight: 600 }}>Cadastre sua empresa</Link>
         </div>
       </form>
     </div>

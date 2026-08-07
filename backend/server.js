@@ -16,6 +16,8 @@ const motoboyRoutes = require('./routes/motoboy.routes');
 const zonaEntregaRoutes = require('./routes/zonaEntrega.routes');
 const canalEntregaRoutes = require('./routes/canalEntrega.routes');
 const webhookRoutes = require('./routes/webhook.routes');
+const empresaRoutes = require('./routes/empresa.routes');
+const utilitarioRoutes = require('./routes/utilitario.routes');
 
 const app = express();
 
@@ -38,6 +40,8 @@ app.use('/api/motoboys', motoboyRoutes);
 app.use('/api/zonas-entrega', zonaEntregaRoutes);
 app.use('/api/canais-entrega', canalEntregaRoutes);
 app.use('/api/webhooks', webhookRoutes);
+app.use('/api/empresas', empresaRoutes);
+app.use('/api/utilitarios', utilitarioRoutes);
 
 app.use((req, res) => res.status(404).json({ erro: 'Rota não encontrada.' }));
 
