@@ -7,6 +7,7 @@ import Cardapio from './pages/Cardapio';
 import CardapioPublico from './pages/CardapioPublico';
 import Pedidos from './pages/Pedidos';
 import NovoPedido from './pages/NovoPedido';
+import CentralPedidos from './pages/CentralPedidos';
 import Cozinha from './pages/Cozinha';
 import Caixa from './pages/Caixa';
 import Salao from './pages/Salao';
@@ -35,6 +36,14 @@ export default function App() {
             element={
               <RotaProtegida>
                 <Cardapio />
+              </RotaProtegida>
+            }
+          />
+          <Route
+            path="/central-pedidos"
+            element={
+              <RotaProtegida>
+                <CentralPedidos />
               </RotaProtegida>
             }
           />

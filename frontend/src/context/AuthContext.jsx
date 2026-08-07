@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import * as authService from '../services/authService';
+import { conectarSocket, desconectarSocket } from '../services/socket';
 
 const AuthContext = createContext(null);
 
@@ -25,6 +26,11 @@ export function AuthProvider({ children }) {
     carregar();
   }, []);
 
+  useEffect(() => {
+    if (usuario) conectarSocket();
+    else desconectarSocket();
+  }, [usuario]);
+
   async function entrar(email, senha) {
     await authService.login(email, senha);
     const dados = await authService.buscarUsuarioLogado();
@@ -41,6 +47,7 @@ export function AuthProvider({ children }) {
 
   function sair() {
     authService.logout();
+    desconectarSocket();
     setUsuario(null);
   }
 

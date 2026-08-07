@@ -1,7 +1,9 @@
 require('dotenv').config();
 const path = require('path');
+const http = require('http');
 const express = require('express');
 const cors = require('cors');
+const { initSocket } = require('./realtime/socket');
 
 const authRoutes = require('./routes/auth.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
@@ -59,5 +61,8 @@ app.use((err, req, res, next) => {
   res.status(500).json({ erro: 'Erro interno no servidor.' });
 });
 
+const httpServer = http.createServer(app);
+initSocket(httpServer);
+
 const PORT = process.env.PORT || 3333;
-app.listen(PORT, () => console.log(`AgapeFood API rodando em http://localhost:${PORT}`));
+httpServer.listen(PORT, () => console.log(`AgapeFood API rodando em http://localhost:${PORT}`));

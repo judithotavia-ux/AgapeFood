@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import AdminLayout from '../layouts/AdminLayout';
 import * as pedidoService from '../services/pedidoService';
+import { obterSocket } from '../services/socket';
 import { STATUS_LABEL, STATUS_COR, PROXIMO_STATUS, TIPO_LABEL, PAGAMENTO_LABEL, CANAL_LABEL, fmtPreco } from '../utils/pedidoConstantes';
 
 const FILTROS = ['TODOS', 'RECEBIDO', 'PREPARANDO', 'PRONTO', 'SAIU_PARA_ENTREGA', 'ENTREGUE', 'CANCELADO'];
@@ -32,6 +33,16 @@ export default function Pedidos() {
   }
 
   useEffect(() => { carregar(); }, [filtro]);
+
+  useEffect(() => {
+    const socket = obterSocket();
+    socket?.on('pedido:novo', carregar);
+    socket?.on('pedido:atualizado', carregar);
+    return () => {
+      socket?.off('pedido:novo', carregar);
+      socket?.off('pedido:atualizado', carregar);
+    };
+  }, [filtro]);
 
   useEffect(() => {
     if (!aviso) return;

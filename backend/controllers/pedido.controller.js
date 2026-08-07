@@ -1,4 +1,5 @@
 const prisma = require('../prisma/client');
+const { emitirParaEmpresa } = require('../realtime/socket');
 
 const PROXIMO_STATUS = {
   RECEBIDO: ['PREPARANDO', 'CANCELADO'],
@@ -124,6 +125,7 @@ async function criar(req, res) {
     include: { itens: true, mesa: true, motoboy: true }
   });
 
+  emitirParaEmpresa(req.usuario.empresaId, 'pedido:novo', pedido);
   res.status(201).json(pedido);
 }
 
@@ -140,6 +142,7 @@ async function atualizarStatus(req, res) {
   }
 
   const atualizado = await prisma.pedido.update({ where: { id }, data: { status } });
+  emitirParaEmpresa(req.usuario.empresaId, 'pedido:atualizado', atualizado);
   res.json(atualizado);
 }
 
@@ -152,6 +155,7 @@ async function cancelar(req, res) {
   }
 
   const atualizado = await prisma.pedido.update({ where: { id }, data: { status: 'CANCELADO' } });
+  emitirParaEmpresa(req.usuario.empresaId, 'pedido:atualizado', atualizado);
   res.json(atualizado);
 }
 

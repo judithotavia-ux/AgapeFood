@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom';
 
 const ITENS_ATIVOS = [
   { to: '/dashboard', label: 'Dashboard', icone: '📊' },
+  { to: '/central-pedidos', label: 'Central de Pedidos', icone: '🔔' },
   { to: '/pedidos', label: 'Pedidos', icone: '🛒' },
   { to: '/cardapio', label: 'Cardápio', icone: '🍔' },
   { to: '/cozinha', label: 'Cozinha', icone: '👨‍🍳' },

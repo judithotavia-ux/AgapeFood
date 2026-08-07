@@ -1,4 +1,5 @@
 const prisma = require('../prisma/client');
+const { emitirParaEmpresa } = require('../realtime/socket');
 
 const TIPO_POR_ROTA = {
   ifood: 'IFOOD',
@@ -72,6 +73,7 @@ async function receberPedido(req, res) {
     include: { itens: true }
   });
 
+  emitirParaEmpresa(empresa.id, 'pedido:novo', pedido);
   res.status(201).json({ ok: true, pedidoId: pedido.id, numero: pedido.numero });
 }
 

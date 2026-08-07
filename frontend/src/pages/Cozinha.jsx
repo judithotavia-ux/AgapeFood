@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import AdminLayout from '../layouts/AdminLayout';
 import * as pedidoService from '../services/pedidoService';
+import { obterSocket } from '../services/socket';
 import { TIPO_LABEL, PAGAMENTO_LABEL } from '../utils/pedidoConstantes';
 
 function tocarBip() {
@@ -131,7 +132,17 @@ export default function Cozinha() {
     carregar();
     const intervaloDados = setInterval(carregar, 8000);
     const intervaloRelogio = setInterval(() => setAgora(Date.now()), 1000);
-    return () => { clearInterval(intervaloDados); clearInterval(intervaloRelogio); };
+
+    const socket = obterSocket();
+    socket?.on('pedido:novo', carregar);
+    socket?.on('pedido:atualizado', carregar);
+
+    return () => {
+      clearInterval(intervaloDados);
+      clearInterval(intervaloRelogio);
+      socket?.off('pedido:novo', carregar);
+      socket?.off('pedido:atualizado', carregar);
+    };
   }, [carregar]);
 
   async function avancar(pedido) {
