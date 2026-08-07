@@ -109,6 +109,7 @@ export default function Cozinha() {
   const [agora, setAgora] = useState(Date.now());
   const idsConhecidos = useRef(new Set());
   const primeiraCarga = useRef(true);
+  const [impressaoAutomatica, setImpressaoAutomatica] = useState(() => localStorage.getItem('agape_impressao_automatica') === 'true');
 
   const carregar = useCallback(async () => {
     const [listaRecebidos, listaPreparando] = await Promise.all([
@@ -145,6 +146,16 @@ export default function Cozinha() {
     };
   }, [carregar]);
 
+  useEffect(() => {
+    localStorage.setItem('agape_impressao_automatica', String(impressaoAutomatica));
+    if (!impressaoAutomatica) return undefined;
+
+    const socket = obterSocket();
+    function aoReceberNovo(pedido) { imprimirComanda(pedido); }
+    socket?.on('pedido:novo', aoReceberNovo);
+    return () => socket?.off('pedido:novo', aoReceberNovo);
+  }, [impressaoAutomatica]);
+
   async function avancar(pedido) {
     const novoStatus = pedido.status === 'RECEBIDO' ? 'PREPARANDO' : 'PRONTO';
     await pedidoService.atualizarStatusPedido(pedido.id, novoStatus);
@@ -153,6 +164,10 @@ export default function Cozinha() {
 
   return (
     <AdminLayout titulo="Cozinha">
+      <label style={{ display: 'flex', alignItems: 'center', gap: 8, textTransform: 'none', fontSize: 13, color: 'var(--texto)', cursor: 'pointer', marginBottom: 16, width: 'fit-content' }}>
+        <input type="checkbox" checked={impressaoAutomatica} onChange={(e) => setImpressaoAutomatica(e.target.checked)} style={{ width: 'auto' }} />
+        🖨️ Impressão automática de comanda ao chegar novo pedido
+      </label>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
         <div>
           <h3 style={{ fontSize: 15, color: 'var(--dourado)', marginBottom: 12 }}>🔔 Novos pedidos ({recebidos.length})</h3>

@@ -8,6 +8,7 @@ import CardapioPublico from './pages/CardapioPublico';
 import Pedidos from './pages/Pedidos';
 import NovoPedido from './pages/NovoPedido';
 import CentralPedidos from './pages/CentralPedidos';
+import Garcons from './pages/Garcons';
 import Cozinha from './pages/Cozinha';
 import Caixa from './pages/Caixa';
 import Salao from './pages/Salao';
@@ -52,6 +53,14 @@ export default function App() {
             element={
               <RotaProtegida>
                 <Pedidos />
+              </RotaProtegida>
+            }
+          />
+          <Route
+            path="/garcons"
+            element={
+              <RotaProtegida>
+                <Garcons />
               </RotaProtegida>
             }
           />
