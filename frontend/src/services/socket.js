@@ -13,7 +13,7 @@ export function conectarSocket() {
     socket.disconnect();
   }
 
-  socket = io(SOCKET_URL, { auth: { token }, transports: ['websocket', 'polling'] });
+  socket = io(SOCKET_URL, { auth: { token } });
   return socket;
 }
 
