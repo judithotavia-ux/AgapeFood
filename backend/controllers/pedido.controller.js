@@ -27,7 +27,7 @@ async function listar(req, res) {
       ...(status ? { status } : {}),
       ...(tipo ? { tipo } : {})
     },
-    include: { itens: true, mesa: true },
+    include: { itens: true, mesa: true, motoboy: true },
     orderBy: { criadoEm: 'desc' },
     take: 200
   });
@@ -39,19 +39,27 @@ async function obter(req, res) {
   const { id } = req.params;
   const pedido = await prisma.pedido.findFirst({
     where: { id, empresaId: req.usuario.empresaId },
-    include: { itens: true, mesa: true }
+    include: { itens: true, mesa: true, motoboy: true }
   });
   if (!pedido) return res.status(404).json({ erro: 'Pedido não encontrado.' });
   res.json(pedido);
 }
 
 async function criar(req, res) {
-  const { tipo, itens, clienteNome, clienteTelefone, clienteEndereco, formaPagamento, taxaEntrega, observacoes, mesaId } = req.body || {};
+  const {
+    tipo, itens, clienteNome, clienteTelefone, clienteEndereco, formaPagamento, taxaEntrega, observacoes, mesaId,
+    canalEntrega, motoboyId, taxaMotoboy
+  } = req.body || {};
 
   if (!tipo) return res.status(400).json({ erro: 'Informe o tipo do pedido.' });
   if (!Array.isArray(itens) || !itens.length) return res.status(400).json({ erro: 'O pedido precisa ter ao menos um item.' });
   if (tipo === 'DELIVERY' && !clienteEndereco) return res.status(400).json({ erro: 'Informe o endereço de entrega.' });
   if (tipo === 'MESA' && !mesaId) return res.status(400).json({ erro: 'Selecione a mesa.' });
+
+  if (motoboyId) {
+    const motoboy = await prisma.motoboy.findFirst({ where: { id: motoboyId, empresaId: req.usuario.empresaId } });
+    if (!motoboy) return res.status(400).json({ erro: 'Motoboy inválido.' });
+  }
 
   const produtoIds = itens.map((i) => i.produtoId).filter(Boolean);
   const produtos = await prisma.produto.findMany({
@@ -108,9 +116,12 @@ async function criar(req, res) {
       observacoes: observacoes || null,
       empresaId: req.usuario.empresaId,
       mesaId: tipo === 'MESA' ? mesaId : null,
+      canalEntrega: tipo === 'DELIVERY' ? (canalEntrega || 'MOTOBOY_PROPRIO') : null,
+      motoboyId: tipo === 'DELIVERY' && motoboyId ? motoboyId : null,
+      taxaMotoboy: tipo === 'DELIVERY' && taxaMotoboy !== undefined ? Number(taxaMotoboy) : null,
       itens: { create: itensParaCriar }
     },
-    include: { itens: true, mesa: true }
+    include: { itens: true, mesa: true, motoboy: true }
   });
 
   res.status(201).json(pedido);

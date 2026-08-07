@@ -6,11 +6,11 @@ const ITENS_ATIVOS = [
   { to: '/cardapio', label: 'Cardápio', icone: '🍔' },
   { to: '/cozinha', label: 'Cozinha', icone: '👨‍🍳' },
   { to: '/caixa', label: 'Caixa', icone: '💳' },
-  { to: '/salao', label: 'Salão', icone: '🍽️' }
+  { to: '/salao', label: 'Salão', icone: '🍽️' },
+  { to: '/delivery', label: 'Delivery', icone: '🚚' }
 ];
 
 const ITENS_FUTUROS = [
-  { label: 'Delivery', icone: '🚚' },
   { label: 'Estoque', icone: '📦' },
   { label: 'Financeiro', icone: '📈' },
   { label: 'Marketing', icone: '📢' },

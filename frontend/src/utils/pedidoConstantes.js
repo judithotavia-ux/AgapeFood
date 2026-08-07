@@ -42,3 +42,16 @@ export const PAGAMENTO_LABEL = {
 export function fmtPreco(v) {
   return 'R$ ' + Number(v).toFixed(2).replace('.', ',');
 }
+
+export const CANAL_LABEL = {
+  MOTOBOY_PROPRIO: '🏍️ Motoboy Próprio',
+  IFOOD: '🍔 iFood',
+  UBER_EATS: '🚗 Uber Eats',
+  NOVENTA_NOVE_FOOD: '📦 99Food'
+};
+
+export const CANAL_ROTA_WEBHOOK = {
+  IFOOD: 'ifood',
+  UBER_EATS: 'ubereats',
+  NOVENTA_NOVE_FOOD: '99food'
+};

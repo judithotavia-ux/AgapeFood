@@ -12,6 +12,10 @@ const pedidoRoutes = require('./routes/pedido.routes');
 const mesaRoutes = require('./routes/mesa.routes');
 const caixaRoutes = require('./routes/caixa.routes');
 const reservaRoutes = require('./routes/reserva.routes');
+const motoboyRoutes = require('./routes/motoboy.routes');
+const zonaEntregaRoutes = require('./routes/zonaEntrega.routes');
+const canalEntregaRoutes = require('./routes/canalEntrega.routes');
+const webhookRoutes = require('./routes/webhook.routes');
 
 const app = express();
 
@@ -30,6 +34,10 @@ app.use('/api/pedidos', pedidoRoutes);
 app.use('/api/mesas', mesaRoutes);
 app.use('/api/caixa', caixaRoutes);
 app.use('/api/reservas', reservaRoutes);
+app.use('/api/motoboys', motoboyRoutes);
+app.use('/api/zonas-entrega', zonaEntregaRoutes);
+app.use('/api/canais-entrega', canalEntregaRoutes);
+app.use('/api/webhooks', webhookRoutes);
 
 app.use((req, res) => res.status(404).json({ erro: 'Rota não encontrada.' }));
 

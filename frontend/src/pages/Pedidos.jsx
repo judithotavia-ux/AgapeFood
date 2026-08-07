@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import AdminLayout from '../layouts/AdminLayout';
 import * as pedidoService from '../services/pedidoService';
-import { STATUS_LABEL, STATUS_COR, PROXIMO_STATUS, TIPO_LABEL, PAGAMENTO_LABEL, fmtPreco } from '../utils/pedidoConstantes';
+import { STATUS_LABEL, STATUS_COR, PROXIMO_STATUS, TIPO_LABEL, PAGAMENTO_LABEL, CANAL_LABEL, fmtPreco } from '../utils/pedidoConstantes';
 
 const FILTROS = ['TODOS', 'RECEBIDO', 'PREPARANDO', 'PRONTO', 'SAIU_PARA_ENTREGA', 'ENTREGUE', 'CANCELADO'];
 
@@ -89,6 +89,7 @@ export default function Pedidos() {
             </div>
             <div style={{ fontSize: 11.5, color: 'var(--texto2)', marginTop: 2 }}>
               {p.itens.length} item(ns) · {p.formaPagamento ? PAGAMENTO_LABEL[p.formaPagamento] : '—'} · {new Date(p.criadoEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+              {p.canalEntrega && <> · {CANAL_LABEL[p.canalEntrega]}{p.motoboy ? ` (${p.motoboy.nome})` : ''}</>}
             </div>
           </div>
 

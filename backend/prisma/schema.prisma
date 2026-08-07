@@ -53,6 +53,13 @@ enum StatusReserva {
   CONCLUIDA
 }
 
+enum TipoCanalEntrega {
+  MOTOBOY_PROPRIO
+  IFOOD
+  UBER_EATS
+  NOVENTA_NOVE_FOOD
+}
+
 model Empresa {
   id        String   @id @default(uuid())
   nome      String
@@ -69,6 +76,9 @@ model Empresa {
   mesas      Mesa[]
   caixas     Caixa[]
   reservas   Reserva[]
+  motoboys   Motoboy[]
+  zonasEntrega ZonaEntrega[]
+  canaisEntrega CanalEntregaConfig[]
   contadorPedido ContadorPedido?
 
   @@map("empresas")
@@ -202,14 +212,63 @@ model Pedido {
   criadoEm         DateTime       @default(now())
   atualizadoEm     DateTime       @updatedAt
 
+  canalEntrega TipoCanalEntrega?
+  taxaMotoboy  Decimal?          @db.Decimal(10, 2)
+  idExterno    String?
+
   empresaId String
   empresa   Empresa @relation(fields: [empresaId], references: [id])
   mesaId    String?
   mesa      Mesa?   @relation(fields: [mesaId], references: [id])
+  motoboyId String?
+  motoboy   Motoboy? @relation(fields: [motoboyId], references: [id])
 
   itens PedidoItem[]
 
+  @@unique([empresaId, canalEntrega, idExterno])
   @@map("pedidos")
+}
+
+model Motoboy {
+  id        String  @id @default(uuid())
+  nome      String
+  telefone  String?
+  veiculo   String?
+  ativo     Boolean @default(true)
+  criadoEm  DateTime @default(now())
+
+  empresaId String
+  empresa   Empresa  @relation(fields: [empresaId], references: [id])
+  pedidos   Pedido[]
+
+  @@map("motoboys")
+}
+
+model ZonaEntrega {
+  id                 String  @id @default(uuid())
+  bairro             String
+  taxaEntrega        Decimal @db.Decimal(10, 2)
+  tempoEstimadoMin   Int?
+  ativo              Boolean @default(true)
+
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+
+  @@unique([empresaId, bairro])
+  @@map("zonas_entrega")
+}
+
+model CanalEntregaConfig {
+  id            String           @id @default(uuid())
+  tipo          TipoCanalEntrega
+  ativo         Boolean          @default(false)
+  webhookToken  String           @unique @default(uuid())
+
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+
+  @@unique([empresaId, tipo])
+  @@map("canais_entrega_config")
 }
 
 model PedidoItem {

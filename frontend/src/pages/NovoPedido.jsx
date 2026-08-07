@@ -5,7 +5,8 @@ import AdicionarItemModal from '../components/AdicionarItemModal';
 import * as cardapioService from '../services/cardapioService';
 import * as pedidoService from '../services/pedidoService';
 import * as mesaService from '../services/mesaService';
-import { fmtPreco, PAGAMENTO_LABEL } from '../utils/pedidoConstantes';
+import * as deliveryService from '../services/deliveryService';
+import { fmtPreco, PAGAMENTO_LABEL, CANAL_LABEL } from '../utils/pedidoConstantes';
 
 const TIPOS = [
   { valor: 'BALCAO', label: '🧾 Balcão' },
@@ -22,6 +23,8 @@ export default function NovoPedido() {
   const [categorias, setCategorias] = useState([]);
   const [produtos, setProdutos] = useState([]);
   const [mesas, setMesas] = useState([]);
+  const [canais, setCanais] = useState([]);
+  const [motoboys, setMotoboys] = useState([]);
   const [busca, setBusca] = useState('');
 
   const [tipo, setTipo] = useState(mesaPreSelecionada ? 'MESA' : 'BALCAO');
@@ -31,6 +34,9 @@ export default function NovoPedido() {
   const [clienteEndereco, setClienteEndereco] = useState('');
   const [formaPagamento, setFormaPagamento] = useState('PIX');
   const [taxaEntrega, setTaxaEntrega] = useState('');
+  const [canalEntrega, setCanalEntrega] = useState('MOTOBOY_PROPRIO');
+  const [motoboyId, setMotoboyId] = useState('');
+  const [taxaMotoboy, setTaxaMotoboy] = useState('');
   const [observacoes, setObservacoes] = useState('');
 
   const [carrinho, setCarrinho] = useState([]);
@@ -42,6 +48,8 @@ export default function NovoPedido() {
     cardapioService.listarCategorias().then(setCategorias);
     cardapioService.listarProdutos({ }).then((lista) => setProdutos(lista.filter((p) => p.disponivel)));
     mesaService.listarMesas().then(setMesas);
+    deliveryService.listarCanaisEntrega().then((lista) => setCanais(lista.filter((c) => c.ativo)));
+    deliveryService.listarMotoboys().then((lista) => setMotoboys(lista.filter((m) => m.ativo)));
   }, []);
 
   const termo = busca.trim().toLowerCase();
@@ -91,7 +99,10 @@ export default function NovoPedido() {
         formaPagamento,
         taxaEntrega: tipo === 'DELIVERY' ? taxa : 0,
         observacoes: observacoes || undefined,
-        mesaId: tipo === 'MESA' ? mesaId : undefined
+        mesaId: tipo === 'MESA' ? mesaId : undefined,
+        canalEntrega: tipo === 'DELIVERY' ? canalEntrega : undefined,
+        motoboyId: tipo === 'DELIVERY' && canalEntrega === 'MOTOBOY_PROPRIO' && motoboyId ? motoboyId : undefined,
+        taxaMotoboy: tipo === 'DELIVERY' && canalEntrega === 'MOTOBOY_PROPRIO' && taxaMotoboy !== '' ? Number(taxaMotoboy) : undefined
       });
       if (tipo === 'MESA') navigate('/salao', { state: { pedidoCriado: pedido.numero } });
       else navigate('/pedidos', { state: { pedidoCriado: pedido.numero } });
@@ -133,10 +144,35 @@ export default function NovoPedido() {
             </div>
 
             {tipo === 'DELIVERY' && (
-              <div style={{ marginTop: 12 }}>
-                <label>Endereço de entrega</label>
-                <input value={clienteEndereco} onChange={(e) => setClienteEndereco(e.target.value)} placeholder="Rua, número, bairro..." />
-              </div>
+              <>
+                <div style={{ marginTop: 12 }}>
+                  <label>Endereço de entrega</label>
+                  <input value={clienteEndereco} onChange={(e) => setClienteEndereco(e.target.value)} placeholder="Rua, número, bairro..." />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: canalEntrega === 'MOTOBOY_PROPRIO' ? '1fr 1fr 1fr' : '1fr', gap: 12, marginTop: 12 }}>
+                  <div>
+                    <label>Canal de entrega</label>
+                    <select value={canalEntrega} onChange={(e) => setCanalEntrega(e.target.value)}>
+                      {canais.map((c) => <option key={c.id} value={c.tipo}>{CANAL_LABEL[c.tipo]}</option>)}
+                    </select>
+                  </div>
+                  {canalEntrega === 'MOTOBOY_PROPRIO' && (
+                    <>
+                      <div>
+                        <label>Motoboy</label>
+                        <select value={motoboyId} onChange={(e) => setMotoboyId(e.target.value)}>
+                          <option value="">Sem motoboy definido</option>
+                          {motoboys.map((m) => <option key={m.id} value={m.id}>{m.nome}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label>Valor do motoboy (R$)</label>
+                        <input type="number" step="0.01" min="0" value={taxaMotoboy} onChange={(e) => setTaxaMotoboy(e.target.value)} placeholder="Ex: 8.00" />
+                      </div>
+                    </>
+                  )}
+                </div>
+              </>
             )}
 
             {tipo === 'MESA' && (
