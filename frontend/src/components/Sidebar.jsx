@@ -5,7 +5,8 @@ const ITENS_ATIVOS = [
   { to: '/pedidos', label: 'Pedidos', icone: '🛒' },
   { to: '/cardapio', label: 'Cardápio', icone: '🍔' },
   { to: '/cozinha', label: 'Cozinha', icone: '👨‍🍳' },
-  { to: '/caixa', label: 'Caixa', icone: '💳' }
+  { to: '/caixa', label: 'Caixa', icone: '💳' },
+  { to: '/salao', label: 'Salão', icone: '🍽️' }
 ];
 
 const ITENS_FUTUROS = [

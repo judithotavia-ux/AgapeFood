@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import * as cardapioService from '../services/cardapioService';
 
 function fmtPreco(v) {
@@ -8,6 +8,8 @@ function fmtPreco(v) {
 
 export default function CardapioPublico() {
   const { slug } = useParams();
+  const [searchParams] = useSearchParams();
+  const mesa = searchParams.get('mesa');
   const [dados, setDados] = useState(null);
   const [erro, setErro] = useState('');
   const [carregando, setCarregando] = useState(true);
@@ -46,6 +48,11 @@ export default function CardapioPublico() {
           )}
           <h1 style={{ fontFamily: 'Georgia, serif', fontSize: 26, color: cor, margin: 0 }}>{dados.empresa.nome}</h1>
           <div style={{ fontSize: 12, color: '#b8ac8e', marginTop: 4 }}>Cardápio digital</div>
+          {mesa && (
+            <div style={{ display: 'inline-block', marginTop: 10, padding: '4px 14px', borderRadius: 20, border: `1px solid ${cor}`, color: cor, fontSize: 12, fontWeight: 600 }}>
+              🍽️ Você está na Mesa {mesa}
+            </div>
+          )}
         </div>
 
         {!dados.categorias.length && (

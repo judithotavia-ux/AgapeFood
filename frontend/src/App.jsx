@@ -9,6 +9,7 @@ import Pedidos from './pages/Pedidos';
 import NovoPedido from './pages/NovoPedido';
 import Cozinha from './pages/Cozinha';
 import Caixa from './pages/Caixa';
+import Salao from './pages/Salao';
 
 export default function App() {
   return (
@@ -62,6 +63,14 @@ export default function App() {
             element={
               <RotaProtegida>
                 <Caixa />
+              </RotaProtegida>
+            }
+          />
+          <Route
+            path="/salao"
+            element={
+              <RotaProtegida>
+                <Salao />
               </RotaProtegida>
             }
           />

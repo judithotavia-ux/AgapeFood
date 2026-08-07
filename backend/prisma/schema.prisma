@@ -47,6 +47,12 @@ enum TipoMovimentacaoCaixa {
   SUPRIMENTO
 }
 
+enum StatusReserva {
+  CONFIRMADA
+  CANCELADA
+  CONCLUIDA
+}
+
 model Empresa {
   id        String   @id @default(uuid())
   nome      String
@@ -62,6 +68,7 @@ model Empresa {
   pedidos    Pedido[]
   mesas      Mesa[]
   caixas     Caixa[]
+  reservas   Reserva[]
   contadorPedido ContadorPedido?
 
   @@map("empresas")
@@ -154,11 +161,30 @@ model Mesa {
   ativo      Boolean @default(true)
 
   empresaId String
-  empresa   Empresa  @relation(fields: [empresaId], references: [id])
+  empresa   Empresa   @relation(fields: [empresaId], references: [id])
   pedidos   Pedido[]
+  reservas  Reserva[]
 
   @@unique([empresaId, numero])
   @@map("mesas")
+}
+
+model Reserva {
+  id              String        @id @default(uuid())
+  clienteNome     String
+  clienteTelefone String?
+  dataHora        DateTime
+  pessoas         Int           @default(1)
+  status          StatusReserva @default(CONFIRMADA)
+  observacoes     String?       @db.Text
+  criadoEm        DateTime      @default(now())
+
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+  mesaId    String?
+  mesa      Mesa?   @relation(fields: [mesaId], references: [id])
+
+  @@map("reservas")
 }
 
 model Pedido {

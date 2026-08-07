@@ -11,6 +11,7 @@ const publicoRoutes = require('./routes/publico.routes');
 const pedidoRoutes = require('./routes/pedido.routes');
 const mesaRoutes = require('./routes/mesa.routes');
 const caixaRoutes = require('./routes/caixa.routes');
+const reservaRoutes = require('./routes/reserva.routes');
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use('/api/publico', publicoRoutes);
 app.use('/api/pedidos', pedidoRoutes);
 app.use('/api/mesas', mesaRoutes);
 app.use('/api/caixa', caixaRoutes);
+app.use('/api/reservas', reservaRoutes);
 
 app.use((req, res) => res.status(404).json({ erro: 'Rota não encontrada.' }));
 

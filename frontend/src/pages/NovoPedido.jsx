@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import AdminLayout from '../layouts/AdminLayout';
 import AdicionarItemModal from '../components/AdicionarItemModal';
 import * as cardapioService from '../services/cardapioService';
@@ -16,13 +16,16 @@ const TIPOS = [
 
 export default function NovoPedido() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const mesaPreSelecionada = location.state?.mesaId;
+
   const [categorias, setCategorias] = useState([]);
   const [produtos, setProdutos] = useState([]);
   const [mesas, setMesas] = useState([]);
   const [busca, setBusca] = useState('');
 
-  const [tipo, setTipo] = useState('BALCAO');
-  const [mesaId, setMesaId] = useState('');
+  const [tipo, setTipo] = useState(mesaPreSelecionada ? 'MESA' : 'BALCAO');
+  const [mesaId, setMesaId] = useState(mesaPreSelecionada || '');
   const [clienteNome, setClienteNome] = useState('');
   const [clienteTelefone, setClienteTelefone] = useState('');
   const [clienteEndereco, setClienteEndereco] = useState('');
@@ -90,7 +93,8 @@ export default function NovoPedido() {
         observacoes: observacoes || undefined,
         mesaId: tipo === 'MESA' ? mesaId : undefined
       });
-      navigate('/pedidos', { state: { pedidoCriado: pedido.numero } });
+      if (tipo === 'MESA') navigate('/salao', { state: { pedidoCriado: pedido.numero } });
+      else navigate('/pedidos', { state: { pedidoCriado: pedido.numero } });
     } catch (e) {
       setErro(e.response?.data?.erro || 'Não foi possível criar o pedido.');
     } finally {
