@@ -3,12 +3,12 @@ import { NavLink } from 'react-router-dom';
 const ITENS_ATIVOS = [
   { to: '/dashboard', label: 'Dashboard', icone: '📊' },
   { to: '/pedidos', label: 'Pedidos', icone: '🛒' },
-  { to: '/cardapio', label: 'Cardápio', icone: '🍔' }
+  { to: '/cardapio', label: 'Cardápio', icone: '🍔' },
+  { to: '/cozinha', label: 'Cozinha', icone: '👨‍🍳' }
 ];
 
 const ITENS_FUTUROS = [
   { label: 'Delivery', icone: '🚚' },
-  { label: 'Cozinha', icone: '👨‍🍳' },
   { label: 'Caixa', icone: '💳' },
   { label: 'Estoque', icone: '📦' },
   { label: 'Financeiro', icone: '📈' },

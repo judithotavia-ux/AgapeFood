@@ -7,6 +7,7 @@ import Cardapio from './pages/Cardapio';
 import CardapioPublico from './pages/CardapioPublico';
 import Pedidos from './pages/Pedidos';
 import NovoPedido from './pages/NovoPedido';
+import Cozinha from './pages/Cozinha';
 
 export default function App() {
   return (
@@ -44,6 +45,14 @@ export default function App() {
             element={
               <RotaProtegida>
                 <NovoPedido />
+              </RotaProtegida>
+            }
+          />
+          <Route
+            path="/cozinha"
+            element={
+              <RotaProtegida>
+                <Cozinha />
               </RotaProtegida>
             }
           />
