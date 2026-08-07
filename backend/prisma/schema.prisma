@@ -23,7 +23,9 @@ model Empresa {
   ativo     Boolean  @default(true)
   criadoEm  DateTime @default(now())
 
-  usuarios  Usuario[]
+  usuarios   Usuario[]
+  categorias Categoria[]
+  produtos   Produto[]
 
   @@map("empresas")
 }
@@ -42,4 +44,53 @@ model Usuario {
   empresa   Empresa? @relation(fields: [empresaId], references: [id])
 
   @@map("usuarios")
+}
+
+model Categoria {
+  id        String   @id @default(uuid())
+  nome      String
+  ordem     Int      @default(0)
+  ativo     Boolean  @default(true)
+  criadoEm  DateTime @default(now())
+
+  empresaId String
+  empresa   Empresa   @relation(fields: [empresaId], references: [id])
+  produtos  Produto[]
+
+  @@map("categorias")
+}
+
+model Produto {
+  id                String   @id @default(uuid())
+  nome              String
+  descricao         String?  @db.Text
+  preco             Decimal  @db.Decimal(10, 2)
+  precoPromocional  Decimal? @db.Decimal(10, 2)
+  imagemUrl         String?
+  ingredientes      String?  @db.Text
+  alergenos         String?  @db.Text
+  disponivel        Boolean  @default(true)
+  destaque          Boolean  @default(false)
+  ordem             Int      @default(0)
+  criadoEm          DateTime @default(now())
+
+  empresaId   String
+  empresa     Empresa   @relation(fields: [empresaId], references: [id])
+  categoriaId String
+  categoria   Categoria @relation(fields: [categoriaId], references: [id])
+  adicionais  Adicional[]
+
+  @@map("produtos")
+}
+
+model Adicional {
+  id     String  @id @default(uuid())
+  nome   String
+  preco  Decimal @db.Decimal(10, 2)
+  ativo  Boolean @default(true)
+
+  produtoId String
+  produto   Produto @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+
+  @@map("adicionais")
 }

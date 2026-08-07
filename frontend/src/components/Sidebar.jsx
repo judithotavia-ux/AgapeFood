@@ -1,11 +1,11 @@
 import { NavLink } from 'react-router-dom';
 
 const ITENS_ATIVOS = [
-  { to: '/dashboard', label: 'Dashboard', icone: '📊' }
+  { to: '/dashboard', label: 'Dashboard', icone: '📊' },
+  { to: '/cardapio', label: 'Cardápio', icone: '🍔' }
 ];
 
 const ITENS_FUTUROS = [
-  { label: 'Cardápio', icone: '🍔' },
   { label: 'Pedidos', icone: '🛒' },
   { label: 'Delivery', icone: '🚚' },
   { label: 'Cozinha', icone: '👨‍🍳' },

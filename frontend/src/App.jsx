@@ -3,6 +3,8 @@ import { AuthProvider } from './context/AuthContext';
 import RotaProtegida from './components/RotaProtegida';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import Cardapio from './pages/Cardapio';
+import CardapioPublico from './pages/CardapioPublico';
 
 export default function App() {
   return (
@@ -10,11 +12,20 @@ export default function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/cardapio/:slug" element={<CardapioPublico />} />
           <Route
             path="/dashboard"
             element={
               <RotaProtegida>
                 <Dashboard />
+              </RotaProtegida>
+            }
+          />
+          <Route
+            path="/cardapio"
+            element={
+              <RotaProtegida>
+                <Cardapio />
               </RotaProtegida>
             }
           />

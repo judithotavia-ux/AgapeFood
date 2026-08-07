@@ -1,19 +1,27 @@
 require('dotenv').config();
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
 
 const authRoutes = require('./routes/auth.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
+const categoriaRoutes = require('./routes/categoria.routes');
+const produtoRoutes = require('./routes/produto.routes');
+const publicoRoutes = require('./routes/publico.routes');
 
 const app = express();
 
 app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
 app.use(express.json());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.get('/api/health', (req, res) => res.json({ ok: true, servico: 'AgapeFood API' }));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/categorias', categoriaRoutes);
+app.use('/api/produtos', produtoRoutes);
+app.use('/api/publico', publicoRoutes);
 
 app.use((req, res) => res.status(404).json({ erro: 'Rota não encontrada.' }));
 
