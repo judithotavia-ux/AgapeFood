@@ -13,7 +13,9 @@ export function conectarSocket() {
     socket.disconnect();
   }
 
-  socket = io(SOCKET_URL, { auth: { token } });
+  // Fica só em long-polling: o upgrade pra websocket trava atrás do proxy do Railway
+  // (a sessao HTTP funciona, mas o upgrade nunca fecha a conexao do lado do navegador).
+  socket = io(SOCKET_URL, { auth: { token }, transports: ['polling'], upgrade: false });
   return socket;
 }
 
