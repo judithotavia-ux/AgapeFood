@@ -4,12 +4,12 @@ const ITENS_ATIVOS = [
   { to: '/dashboard', label: 'Dashboard', icone: '📊' },
   { to: '/pedidos', label: 'Pedidos', icone: '🛒' },
   { to: '/cardapio', label: 'Cardápio', icone: '🍔' },
-  { to: '/cozinha', label: 'Cozinha', icone: '👨‍🍳' }
+  { to: '/cozinha', label: 'Cozinha', icone: '👨‍🍳' },
+  { to: '/caixa', label: 'Caixa', icone: '💳' }
 ];
 
 const ITENS_FUTUROS = [
   { label: 'Delivery', icone: '🚚' },
-  { label: 'Caixa', icone: '💳' },
   { label: 'Estoque', icone: '📦' },
   { label: 'Financeiro', icone: '📈' },
   { label: 'Marketing', icone: '📢' },

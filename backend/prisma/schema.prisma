@@ -37,6 +37,16 @@ enum FormaPagamento {
   VALE_ALIMENTACAO
 }
 
+enum StatusCaixa {
+  ABERTO
+  FECHADO
+}
+
+enum TipoMovimentacaoCaixa {
+  SANGRIA
+  SUPRIMENTO
+}
+
 model Empresa {
   id        String   @id @default(uuid())
   nome      String
@@ -51,6 +61,7 @@ model Empresa {
   produtos   Produto[]
   pedidos    Pedido[]
   mesas      Mesa[]
+  caixas     Caixa[]
   contadorPedido ContadorPedido?
 
   @@map("empresas")
@@ -68,6 +79,10 @@ model Usuario {
 
   empresaId String?
   empresa   Empresa? @relation(fields: [empresaId], references: [id])
+
+  caixasAbertos      Caixa[]             @relation("CaixaAbertoPor")
+  caixasFechados     Caixa[]             @relation("CaixaFechadoPor")
+  movimentacoesCaixa MovimentacaoCaixa[]
 
   @@map("usuarios")
 }
@@ -185,4 +200,44 @@ model PedidoItem {
   produto   Produto? @relation(fields: [produtoId], references: [id])
 
   @@map("pedido_itens")
+}
+
+model Caixa {
+  id                     String      @id @default(uuid())
+  status                 StatusCaixa @default(ABERTO)
+  valorAbertura          Decimal     @db.Decimal(10, 2)
+  valorFechamento        Decimal?    @db.Decimal(10, 2)
+  observacoesAbertura    String?     @db.Text
+  observacoesFechamento  String?     @db.Text
+  abertoEm               DateTime    @default(now())
+  fechadoEm              DateTime?
+
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+
+  usuarioAberturaId String
+  usuarioAbertura   Usuario @relation("CaixaAbertoPor", fields: [usuarioAberturaId], references: [id])
+
+  usuarioFechamentoId String?
+  usuarioFechamento   Usuario? @relation("CaixaFechadoPor", fields: [usuarioFechamentoId], references: [id])
+
+  movimentacoes MovimentacaoCaixa[]
+
+  @@map("caixas")
+}
+
+model MovimentacaoCaixa {
+  id       String                 @id @default(uuid())
+  tipo     TipoMovimentacaoCaixa
+  valor    Decimal                @db.Decimal(10, 2)
+  motivo   String
+  criadoEm DateTime               @default(now())
+
+  caixaId String
+  caixa   Caixa @relation(fields: [caixaId], references: [id], onDelete: Cascade)
+
+  usuarioId String
+  usuario   Usuario @relation(fields: [usuarioId], references: [id])
+
+  @@map("movimentacoes_caixa")
 }
