@@ -1,6 +1,6 @@
 const express = require('express');
 const {
-  listar, obter, criar, atualizar, remover, adicionarAdicional, removerAdicional
+  listar, obter, criar, atualizar, remover, adicionarAdicional, removerAdicional, atualizarEstoqueConfig
 } = require('../controllers/produto.controller');
 const { autenticar } = require('../middlewares/auth.middleware');
 const upload = require('../middlewares/upload.middleware');
@@ -12,6 +12,7 @@ router.get('/', listar);
 router.get('/:id', obter);
 router.post('/', upload.single('imagem'), criar);
 router.put('/:id', upload.single('imagem'), atualizar);
+router.put('/:id/estoque-config', atualizarEstoqueConfig);
 router.delete('/:id', remover);
 
 router.post('/:id/adicionais', adicionarAdicional);

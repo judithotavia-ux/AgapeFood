@@ -60,6 +60,20 @@ enum TipoCanalEntrega {
   NOVENTA_NOVE_FOOD
 }
 
+enum TipoMovimentacaoEstoque {
+  ENTRADA
+  SAIDA
+  TRANSFERENCIA
+  INVENTARIO
+  PERDA
+  QUEBRA
+  CONSUMO_INTERNO
+  PRODUCAO
+  COMPRA
+  VENDA
+  AJUSTE
+}
+
 enum TipoEmpresa {
   RESTAURANTE
   LANCHONETE
@@ -126,6 +140,8 @@ model Empresa {
   zonasEntrega ZonaEntrega[]
   canaisEntrega CanalEntregaConfig[]
   contadorPedido ContadorPedido?
+  fornecedores  Fornecedor[]
+  movimentacoesEstoque MovimentacaoEstoque[]
 
   @@map("empresas")
 }
@@ -152,6 +168,7 @@ model Usuario {
   caixasAbertos      Caixa[]             @relation("CaixaAbertoPor")
   caixasFechados     Caixa[]             @relation("CaixaFechadoPor")
   movimentacoesCaixa MovimentacaoCaixa[]
+  movimentacoesEstoque MovimentacaoEstoque[]
 
   @@map("usuarios")
 }
@@ -184,14 +201,97 @@ model Produto {
   ordem             Int      @default(0)
   criadoEm          DateTime @default(now())
 
+  // Estoque - identificacao
+  sku            String?
+  codigoBarras   String?
+  ncm            String?
+  cest           String?
+  unidade        String?  @default("UN")
+  marca          String?
+  fabricante     String?
+  localizacao    String?
+
+  // Estoque - controle
+  controlaEstoque   Boolean @default(false)
+  controlaLote      Boolean @default(false)
+  controlaValidade  Boolean @default(false)
+  estoqueAtual      Decimal @default(0) @db.Decimal(12, 3)
+  estoqueMinimo     Decimal @default(0) @db.Decimal(12, 3)
+  estoqueMaximo     Decimal @default(0) @db.Decimal(12, 3)
+  pontoReposicao    Decimal @default(0) @db.Decimal(12, 3)
+
+  // Estoque - custos e ficha tecnica
+  custo    Decimal? @db.Decimal(10, 2)
+  peso     Decimal? @db.Decimal(10, 3)
+  volume   Decimal? @db.Decimal(10, 3)
+
   empresaId   String
   empresa     Empresa   @relation(fields: [empresaId], references: [id])
   categoriaId String
   categoria   Categoria @relation(fields: [categoriaId], references: [id])
   adicionais  Adicional[]
   pedidoItens PedidoItem[]
+  lotes       Lote[]
+  movimentacoesEstoque MovimentacaoEstoque[]
 
   @@map("produtos")
+}
+
+model Fornecedor {
+  id        String   @id @default(uuid())
+  nome      String
+  cnpjCpf   String?
+  telefone  String?
+  email     String?
+  endereco  String?
+  contato   String?
+  ativo     Boolean  @default(true)
+  criadoEm  DateTime @default(now())
+
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+  lotes     Lote[]
+
+  @@map("fornecedores")
+}
+
+model Lote {
+  id             String    @id @default(uuid())
+  numeroLote     String
+  quantidade     Decimal   @db.Decimal(12, 3)
+  custoUnitario  Decimal?  @db.Decimal(10, 2)
+  dataFabricacao DateTime?
+  dataValidade   DateTime?
+  criadoEm       DateTime  @default(now())
+
+  produtoId String
+  produto   Produto @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  fornecedorId String?
+  fornecedor   Fornecedor? @relation(fields: [fornecedorId], references: [id])
+
+  movimentacoes MovimentacaoEstoque[]
+
+  @@map("lotes")
+}
+
+model MovimentacaoEstoque {
+  id             String                  @id @default(uuid())
+  tipo           TipoMovimentacaoEstoque
+  quantidade     Decimal                 @db.Decimal(12, 3)
+  custoUnitario  Decimal?                @db.Decimal(10, 2)
+  motivo         String?
+  criadoEm       DateTime                @default(now())
+
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+  produtoId String
+  produto   Produto @relation(fields: [produtoId], references: [id])
+  loteId    String?
+  lote      Lote?   @relation(fields: [loteId], references: [id])
+  usuarioId String
+  usuario   Usuario @relation(fields: [usuarioId], references: [id])
+
+  @@map("movimentacoes_estoque")
 }
 
 model Adicional {

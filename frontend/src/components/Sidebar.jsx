@@ -7,11 +7,11 @@ const ITENS_ATIVOS = [
   { to: '/cozinha', label: 'Cozinha', icone: '👨‍🍳' },
   { to: '/caixa', label: 'Caixa', icone: '💳' },
   { to: '/salao', label: 'Salão', icone: '🍽️' },
-  { to: '/delivery', label: 'Delivery', icone: '🚚' }
+  { to: '/delivery', label: 'Delivery', icone: '🚚' },
+  { to: '/estoque', label: 'Estoque', icone: '📦' }
 ];
 
 const ITENS_FUTUROS = [
-  { label: 'Estoque', icone: '📦' },
   { label: 'Financeiro', icone: '📈' },
   { label: 'Marketing', icone: '📢' },
   { label: 'Ágape IA', icone: '🤖' }

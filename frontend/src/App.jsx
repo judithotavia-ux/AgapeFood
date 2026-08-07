@@ -11,6 +11,7 @@ import Cozinha from './pages/Cozinha';
 import Caixa from './pages/Caixa';
 import Salao from './pages/Salao';
 import Delivery from './pages/Delivery';
+import Estoque from './pages/Estoque';
 import CadastroEmpresa from './pages/CadastroEmpresa';
 
 export default function App() {
@@ -82,6 +83,14 @@ export default function App() {
             element={
               <RotaProtegida>
                 <Delivery />
+              </RotaProtegida>
+            }
+          />
+          <Route
+            path="/estoque"
+            element={
+              <RotaProtegida>
+                <Estoque />
               </RotaProtegida>
             }
           />

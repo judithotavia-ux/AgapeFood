@@ -111,6 +111,44 @@ async function atualizar(req, res) {
   res.json(produto);
 }
 
+async function atualizarEstoqueConfig(req, res) {
+  const { id } = req.params;
+  const existente = await prisma.produto.findFirst({ where: { id, empresaId: req.usuario.empresaId } });
+  if (!existente) return res.status(404).json({ erro: 'Produto não encontrado.' });
+
+  const {
+    sku, codigoBarras, ncm, cest, unidade, marca, fabricante, localizacao,
+    controlaEstoque, controlaLote, controlaValidade,
+    estoqueMinimo, estoqueMaximo, pontoReposicao,
+    custo, peso, volume
+  } = req.body || {};
+
+  const produto = await prisma.produto.update({
+    where: { id },
+    data: {
+      sku: sku !== undefined ? sku : existente.sku,
+      codigoBarras: codigoBarras !== undefined ? codigoBarras : existente.codigoBarras,
+      ncm: ncm !== undefined ? ncm : existente.ncm,
+      cest: cest !== undefined ? cest : existente.cest,
+      unidade: unidade !== undefined ? unidade : existente.unidade,
+      marca: marca !== undefined ? marca : existente.marca,
+      fabricante: fabricante !== undefined ? fabricante : existente.fabricante,
+      localizacao: localizacao !== undefined ? localizacao : existente.localizacao,
+      controlaEstoque: controlaEstoque !== undefined ? Boolean(controlaEstoque) : existente.controlaEstoque,
+      controlaLote: controlaLote !== undefined ? Boolean(controlaLote) : existente.controlaLote,
+      controlaValidade: controlaValidade !== undefined ? Boolean(controlaValidade) : existente.controlaValidade,
+      estoqueMinimo: estoqueMinimo !== undefined ? Number(estoqueMinimo) : existente.estoqueMinimo,
+      estoqueMaximo: estoqueMaximo !== undefined ? Number(estoqueMaximo) : existente.estoqueMaximo,
+      pontoReposicao: pontoReposicao !== undefined ? Number(pontoReposicao) : existente.pontoReposicao,
+      custo: custo !== undefined ? (custo === '' ? null : Number(custo)) : existente.custo,
+      peso: peso !== undefined ? (peso === '' ? null : Number(peso)) : existente.peso,
+      volume: volume !== undefined ? (volume === '' ? null : Number(volume)) : existente.volume
+    }
+  });
+
+  res.json(produto);
+}
+
 async function remover(req, res) {
   const { id } = req.params;
   const existente = await prisma.produto.findFirst({ where: { id, empresaId: req.usuario.empresaId } });
@@ -147,4 +185,4 @@ async function removerAdicional(req, res) {
   res.status(204).send();
 }
 
-module.exports = { listar, obter, criar, atualizar, remover, adicionarAdicional, removerAdicional };
+module.exports = { listar, obter, criar, atualizar, atualizarEstoqueConfig, remover, adicionarAdicional, removerAdicional };

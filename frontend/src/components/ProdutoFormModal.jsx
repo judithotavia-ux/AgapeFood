@@ -1,6 +1,13 @@
 import { useEffect, useState } from 'react';
 import Modal from './Modal';
 import * as cardapioService from '../services/cardapioService';
+import * as estoqueService from '../services/estoqueService';
+
+const CAMPOS_ESTOQUE_INICIAIS = {
+  controlaEstoque: false, controlaLote: false, controlaValidade: false,
+  unidade: 'UN', sku: '', codigoBarras: '', localizacao: '',
+  estoqueMinimo: '', estoqueMaximo: '', pontoReposicao: '', custo: ''
+};
 
 const CAMPOS_INICIAIS = {
   nome: '', descricao: '', preco: '', precoPromocional: '', categoriaId: '',
@@ -19,6 +26,11 @@ export default function ProdutoFormModal({ aberto, produto, categorias, onFechar
   const [novoAdNome, setNovoAdNome] = useState('');
   const [novoAdPreco, setNovoAdPreco] = useState('');
 
+  const [campEstoque, setCampEstoque] = useState(CAMPOS_ESTOQUE_INICIAIS);
+  const [salvandoEstoque, setSalvandoEstoque] = useState(false);
+  const [erroEstoque, setErroEstoque] = useState('');
+  const [okEstoque, setOkEstoque] = useState(false);
+
   useEffect(() => {
     if (produto) {
       setCampos({
@@ -34,14 +46,30 @@ export default function ProdutoFormModal({ aberto, produto, categorias, onFechar
       });
       setImagemPreview(produto.imagemUrl || null);
       setAdicionais(produto.adicionais || []);
+      setCampEstoque({
+        controlaEstoque: produto.controlaEstoque ?? false,
+        controlaLote: produto.controlaLote ?? false,
+        controlaValidade: produto.controlaValidade ?? false,
+        unidade: produto.unidade || 'UN',
+        sku: produto.sku || '',
+        codigoBarras: produto.codigoBarras || '',
+        localizacao: produto.localizacao || '',
+        estoqueMinimo: produto.estoqueMinimo ?? '',
+        estoqueMaximo: produto.estoqueMaximo ?? '',
+        pontoReposicao: produto.pontoReposicao ?? '',
+        custo: produto.custo ?? ''
+      });
     } else {
       setCampos({ ...CAMPOS_INICIAIS, categoriaId: categorias[0]?.id || '' });
       setImagemPreview(null);
       setAdicionais([]);
+      setCampEstoque(CAMPOS_ESTOQUE_INICIAIS);
     }
     setImagemArquivo(null);
     setRemoverImagem(false);
     setErro('');
+    setErroEstoque('');
+    setOkEstoque(false);
   }, [produto, aberto, categorias]);
 
   function handleArquivo(e) {
@@ -99,6 +127,25 @@ export default function ProdutoFormModal({ aberto, produto, categorias, onFechar
   async function handleRemoverAdicional(adicionalId) {
     await cardapioService.removerAdicional(produto.id, adicionalId);
     setAdicionais((lista) => lista.filter((a) => a.id !== adicionalId));
+  }
+
+  function setEst(campo, valor) {
+    setCampEstoque((c) => ({ ...c, [campo]: valor }));
+    setOkEstoque(false);
+  }
+
+  async function handleSalvarEstoque() {
+    setSalvandoEstoque(true);
+    setErroEstoque('');
+    setOkEstoque(false);
+    try {
+      await estoqueService.atualizarEstoqueConfigProduto(produto.id, campEstoque);
+      setOkEstoque(true);
+    } catch (e) {
+      setErroEstoque(e.response?.data?.erro || 'Não foi possível salvar a configuração de estoque.');
+    } finally {
+      setSalvandoEstoque(false);
+    }
   }
 
   return (
@@ -197,6 +244,77 @@ export default function ProdutoFormModal({ aberto, produto, categorias, onFechar
           <button type="submit" className="btn" style={{ flex: 1 }} disabled={salvando}>{salvando ? 'Salvando…' : 'Salvar produto'}</button>
         </div>
       </form>
+
+      {produto?.id && (
+        <div style={{ borderTop: '1px solid var(--borda)', paddingTop: 14, marginTop: 18 }}>
+          <label style={{ marginBottom: 8 }}>Ficha de estoque</label>
+
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, textTransform: 'none', fontSize: 13, color: 'var(--texto)', cursor: 'pointer', marginBottom: 12 }}>
+            <input type="checkbox" checked={campEstoque.controlaEstoque} onChange={(e) => setEst('controlaEstoque', e.target.checked)} style={{ width: 'auto' }} />
+            Controlar estoque deste produto
+          </label>
+
+          {campEstoque.controlaEstoque && (
+            <>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 12 }}>
+                <div>
+                  <label>Unidade</label>
+                  <input value={campEstoque.unidade} onChange={(e) => setEst('unidade', e.target.value)} placeholder="UN, KG, L..." />
+                </div>
+                <div>
+                  <label>SKU</label>
+                  <input value={campEstoque.sku} onChange={(e) => setEst('sku', e.target.value)} placeholder="Opcional" />
+                </div>
+                <div>
+                  <label>Código de barras</label>
+                  <input value={campEstoque.codigoBarras} onChange={(e) => setEst('codigoBarras', e.target.value)} placeholder="Opcional" />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 12 }}>
+                <div>
+                  <label>Estoque mínimo</label>
+                  <input type="number" step="0.001" min="0" value={campEstoque.estoqueMinimo} onChange={(e) => setEst('estoqueMinimo', e.target.value)} />
+                </div>
+                <div>
+                  <label>Estoque máximo</label>
+                  <input type="number" step="0.001" min="0" value={campEstoque.estoqueMaximo} onChange={(e) => setEst('estoqueMaximo', e.target.value)} placeholder="Opcional" />
+                </div>
+                <div>
+                  <label>Ponto de reposição</label>
+                  <input type="number" step="0.001" min="0" value={campEstoque.pontoReposicao} onChange={(e) => setEst('pontoReposicao', e.target.value)} placeholder="Opcional" />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                <div>
+                  <label>Custo (R$)</label>
+                  <input type="number" step="0.01" min="0" value={campEstoque.custo} onChange={(e) => setEst('custo', e.target.value)} placeholder="Opcional" />
+                </div>
+                <div>
+                  <label>Localização</label>
+                  <input value={campEstoque.localizacao} onChange={(e) => setEst('localizacao', e.target.value)} placeholder="Ex: Câmara fria 1" />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 20, marginBottom: 14 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, textTransform: 'none', fontSize: 13, color: 'var(--texto)', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={campEstoque.controlaLote} onChange={(e) => setEst('controlaLote', e.target.checked)} style={{ width: 'auto' }} /> Controla lote
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, textTransform: 'none', fontSize: 13, color: 'var(--texto)', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={campEstoque.controlaValidade} onChange={(e) => setEst('controlaValidade', e.target.checked)} style={{ width: 'auto' }} /> Controla validade
+                </label>
+              </div>
+            </>
+          )}
+
+          {erroEstoque && <div className="erro-msg">{erroEstoque}</div>}
+          {okEstoque && <div style={{ color: 'var(--sucesso)', fontSize: 12, marginBottom: 10 }}>Configuração de estoque salva.</div>}
+          <button type="button" className="btn-outline" style={{ width: '100%', borderRadius: 10, padding: '10px' }} onClick={handleSalvarEstoque} disabled={salvandoEstoque}>
+            {salvandoEstoque ? 'Salvando…' : 'Salvar configuração de estoque'}
+          </button>
+        </div>
+      )}
     </Modal>
   );
 }
