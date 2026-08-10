@@ -1,5 +1,6 @@
 const prisma = require('../prisma/client');
 const Anthropic = require('@anthropic-ai/sdk');
+const { obterClienteAnthropic } = require('../services/anthropicCliente.service');
 
 const CANAIS_VALIDOS = ['WHATSAPP', 'EMAIL', 'SMS', 'INSTAGRAM', 'FACEBOOK', 'PUSH', 'OUTRO'];
 
@@ -13,19 +14,14 @@ const FORMATO_POR_CANAL = {
   OUTRO: 'até 150 palavras, tom geral de divulgação'
 };
 
-function clienteAnthropic() {
-  if (!process.env.ANTHROPIC_API_KEY) return null;
-  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-}
-
 async function gerarTexto(req, res) {
   const { canal, objetivo, segmento, tom } = req.body || {};
   if (!CANAIS_VALIDOS.includes(canal)) return res.status(400).json({ erro: 'Canal inválido.' });
   if (!objetivo || !objetivo.trim()) return res.status(400).json({ erro: 'Descreva o objetivo da campanha.' });
 
-  const client = clienteAnthropic();
+  const client = await obterClienteAnthropic(req.usuario.empresaId);
   if (!client) {
-    return res.status(503).json({ erro: 'A geração por IA ainda não foi configurada nesta conta. Fale com o suporte AgapeFood.' });
+    return res.status(503).json({ erro: 'Configure sua chave da Anthropic para usar a geração por IA. Vá em Ágape IA → Configurar chave.' });
   }
 
   const empresa = await prisma.empresa.findUnique({ where: { id: req.usuario.empresaId }, select: { nome: true } });

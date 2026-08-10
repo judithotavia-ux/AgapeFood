@@ -244,6 +244,9 @@ model Empresa {
   // Termos legais
   termosAceitosEm DateTime?
 
+  // Ágape IA — cada empresa configura e paga sua própria chave da Anthropic
+  iaChaveAnthropic String? @db.Text
+
   usuarios              Usuario[]
   categorias            Categoria[]
   produtos              Produto[]

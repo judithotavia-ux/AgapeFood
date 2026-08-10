@@ -7,3 +7,8 @@ export const excluirConversaIA = (id) => api.delete(`/agape-ia/conversas/${id}`)
 
 export const obterDashboardIA = (dias) => api.get('/agape-ia/dashboard', { params: dias ? { dias } : {} }).then((r) => r.data);
 export const atualizarTarefaIA = (id, status) => api.patch(`/agape-ia/tarefas/${id}`, { status }).then((r) => r.data);
+
+// Configuração da chave da Anthropic (cada empresa configura e paga a própria)
+export const obterConfigIA = () => api.get('/empresas/minha/ia-config').then((r) => r.data);
+export const salvarConfigIA = (chaveAnthropic) => api.put('/empresas/minha/ia-config', { chaveAnthropic }).then((r) => r.data);
+export const removerConfigIA = () => api.put('/empresas/minha/ia-config', { chaveAnthropic: '' }).then((r) => r.data);

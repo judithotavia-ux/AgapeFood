@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import AdminLayout from '../layouts/AdminLayout';
+import Modal from '../components/Modal';
 import * as agapeIaService from '../services/agapeIaService';
 
 const SUGESTOES = [
@@ -45,6 +46,12 @@ export default function AgapeIAChat() {
   const [carregandoLista, setCarregandoLista] = useState(true);
   const fimRef = useRef(null);
 
+  const [configIA, setConfigIA] = useState(null);
+  const [modalConfig, setModalConfig] = useState(false);
+  const [chaveInput, setChaveInput] = useState('');
+  const [salvandoConfig, setSalvandoConfig] = useState(false);
+  const [erroConfig, setErroConfig] = useState('');
+
   async function carregarConversas() {
     setCarregandoLista(true);
     const lista = await agapeIaService.listarConversasIA();
@@ -52,7 +59,47 @@ export default function AgapeIAChat() {
     setCarregandoLista(false);
   }
 
-  useEffect(() => { carregarConversas(); }, []);
+  async function carregarConfigIA() {
+    const cfg = await agapeIaService.obterConfigIA();
+    setConfigIA(cfg);
+  }
+
+  useEffect(() => { carregarConversas(); carregarConfigIA(); }, []);
+
+  function abrirModalConfig() {
+    setChaveInput('');
+    setErroConfig('');
+    setModalConfig(true);
+  }
+
+  async function salvarChaveIA(e) {
+    e.preventDefault();
+    if (!chaveInput.trim()) return setErroConfig('Cole sua chave da Anthropic (começa com "sk-ant-").');
+    setSalvandoConfig(true);
+    setErroConfig('');
+    try {
+      const cfg = await agapeIaService.salvarConfigIA(chaveInput.trim());
+      setConfigIA(cfg);
+      setModalConfig(false);
+      setErro('');
+    } catch (err) {
+      setErroConfig(err.response?.data?.erro || 'Não foi possível salvar a chave.');
+    } finally {
+      setSalvandoConfig(false);
+    }
+  }
+
+  async function removerChaveIA() {
+    if (!confirm('Remover a chave da Anthropic? A Ágape IA para de funcionar até você configurar uma nova.')) return;
+    setSalvandoConfig(true);
+    try {
+      const cfg = await agapeIaService.removerConfigIA();
+      setConfigIA(cfg);
+      setModalConfig(false);
+    } finally {
+      setSalvandoConfig(false);
+    }
+  }
 
   useEffect(() => {
     fimRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -117,6 +164,13 @@ export default function AgapeIAChat() {
           <Link to="/agape-ia/dashboard" style={{ fontSize: 12.5, color: 'var(--texto2)', textAlign: 'center', textDecoration: 'underline' }}>
             Ver dashboard da IA →
           </Link>
+          <button
+            className="btn-outline"
+            onClick={abrirModalConfig}
+            style={{ width: '100%', fontSize: 12.5, padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+          >
+            ⚙️ {configIA?.configurada ? 'Chave configurada' : 'Configurar chave'}
+          </button>
           <div className="card" style={{ flex: 1, overflowY: 'auto', padding: 8 }}>
             {carregandoLista && <div style={{ fontSize: 12.5, color: 'var(--texto2)', padding: 10 }}>Carregando…</div>}
             {!carregandoLista && conversas.length === 0 && (
@@ -157,6 +211,17 @@ export default function AgapeIAChat() {
         </aside>
 
         <div className="card" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden' }}>
+          {configIA && !configIA.configurada && (
+            <div style={{
+              margin: '16px 22px 0', padding: '12px 16px', borderRadius: 10,
+              background: 'rgba(212,175,55,.08)', border: '1px solid var(--borda)',
+              fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12
+            }}>
+              <span>⚠️ Configure sua chave da Anthropic para a Ágape IA funcionar.</span>
+              <button className="btn" style={{ padding: '7px 14px', fontSize: 12.5, flexShrink: 0 }} onClick={abrirModalConfig}>Configurar agora</button>
+            </div>
+          )}
+
           <div style={{ flex: 1, overflowY: 'auto', padding: 22, display: 'flex', flexDirection: 'column', gap: 14 }}>
             {mensagens.length === 0 && (
               <div style={{ margin: 'auto', textAlign: 'center', maxWidth: 420 }}>
@@ -206,6 +271,46 @@ export default function AgapeIAChat() {
           </div>
         </div>
       </div>
+
+      <Modal titulo="Configurar chave da Ágape IA" aberto={modalConfig} onFechar={() => setModalConfig(false)}>
+        <p style={{ fontSize: 13, color: 'var(--texto2)', marginBottom: 16 }}>
+          A Ágape IA usa a API da Anthropic (mesma empresa da Claude). Cada empresa configura e paga sua própria chave — o uso não passa pelo AgapeFood.
+        </p>
+        <ol style={{ fontSize: 12.5, color: 'var(--texto2)', paddingLeft: 18, marginBottom: 18, lineHeight: 1.8 }}>
+          <li>Acesse <strong>console.anthropic.com</strong> e crie uma conta</li>
+          <li>Em <strong>Billing</strong>, adicione um cartão / crédito</li>
+          <li>Em <strong>API Keys</strong>, gere uma chave nova</li>
+          <li>Cole a chave abaixo</li>
+        </ol>
+
+        {configIA?.configurada && (
+          <div style={{ fontSize: 13, marginBottom: 14, padding: '10px 12px', background: 'var(--preto3)', borderRadius: 8 }}>
+            Chave atual: <strong>{configIA.chaveMascarada}</strong>
+          </div>
+        )}
+
+        <form onSubmit={salvarChaveIA}>
+          <label>Chave da Anthropic</label>
+          <input
+            type="password"
+            value={chaveInput}
+            onChange={(e) => setChaveInput(e.target.value)}
+            placeholder="sk-ant-..."
+            autoComplete="off"
+          />
+          {erroConfig && <div className="erro-msg">{erroConfig}</div>}
+          <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
+            <button type="submit" className="btn" disabled={salvandoConfig} style={{ flex: 1 }}>
+              {salvandoConfig ? 'Salvando…' : 'Salvar chave'}
+            </button>
+            {configIA?.configurada && (
+              <button type="button" className="btn-outline" onClick={removerChaveIA} disabled={salvandoConfig}>
+                Remover
+              </button>
+            )}
+          </div>
+        </form>
+      </Modal>
     </AdminLayout>
   );
 }

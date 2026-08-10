@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const prisma = require('../prisma/client');
 const { gerarToken } = require('./auth.controller');
+const { criptografar, descriptografar } = require('../utils/criptografia');
 
 const TIPOS_CANAL = ['MOTOBOY_PROPRIO', 'IFOOD', 'UBER_EATS', 'NOVENTA_NOVE_FOOD'];
 const CATEGORIAS_PADRAO = ['Pratos Principais', 'Bebidas', 'Sobremesas'];
@@ -174,4 +175,43 @@ async function atualizarCashback(req, res) {
   res.json(empresa);
 }
 
-module.exports = { registrar, obterMinhaEmpresa, atualizarCashback };
+async function obterConfigIA(req, res) {
+  const empresa = await prisma.empresa.findUnique({
+    where: { id: req.usuario.empresaId },
+    select: { iaChaveAnthropic: true }
+  });
+
+  if (!empresa?.iaChaveAnthropic) return res.json({ configurada: false, chaveMascarada: null });
+
+  let chaveMascarada = null;
+  try {
+    const chave = descriptografar(empresa.iaChaveAnthropic);
+    chaveMascarada = chave.length > 8 ? `${chave.slice(0, 6)}••••••${chave.slice(-4)}` : '••••••••';
+  } catch {
+    chaveMascarada = '••••••••';
+  }
+
+  res.json({ configurada: true, chaveMascarada });
+}
+
+async function atualizarConfigIA(req, res) {
+  const { chaveAnthropic } = req.body || {};
+
+  if (chaveAnthropic === '' || chaveAnthropic === null) {
+    await prisma.empresa.update({ where: { id: req.usuario.empresaId }, data: { iaChaveAnthropic: null } });
+    return res.json({ configurada: false, chaveMascarada: null });
+  }
+
+  if (!chaveAnthropic || !chaveAnthropic.trim().startsWith('sk-ant-')) {
+    return res.status(400).json({ erro: 'Chave inválida. Uma chave da Anthropic começa com "sk-ant-".' });
+  }
+
+  const criptografada = criptografar(chaveAnthropic.trim());
+  await prisma.empresa.update({ where: { id: req.usuario.empresaId }, data: { iaChaveAnthropic: criptografada } });
+
+  const chave = chaveAnthropic.trim();
+  const chaveMascarada = chave.length > 8 ? `${chave.slice(0, 6)}••••••${chave.slice(-4)}` : '••••••••';
+  res.json({ configurada: true, chaveMascarada });
+}
+
+module.exports = { registrar, obterMinhaEmpresa, atualizarCashback, obterConfigIA, atualizarConfigIA };

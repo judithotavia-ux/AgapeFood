@@ -1,5 +1,6 @@
 const Anthropic = require('@anthropic-ai/sdk');
 const prisma = require('../prisma/client');
+const { obterClienteAnthropic } = require('./anthropicCliente.service');
 const produtoController = require('../controllers/produto.controller');
 const estoqueDashboardController = require('../controllers/estoqueDashboard.controller');
 const pedidoController = require('../controllers/pedido.controller');
@@ -14,11 +15,6 @@ class ErroAgapeIA extends Error {
     this.status = status;
     this.erro = erro;
   }
-}
-
-function clienteAnthropic() {
-  if (!process.env.ANTHROPIC_API_KEY) return null;
-  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 }
 
 async function chamarControlador(handler, reqParcial) {
@@ -272,9 +268,9 @@ async function executarFerramenta(nome, input, ctx) {
 }
 
 async function processarMensagem({ empresaId, usuario, conversaId, texto }) {
-  const client = clienteAnthropic();
+  const client = await obterClienteAnthropic(empresaId);
   if (!client) {
-    throw new ErroAgapeIA(503, 'A Ágape IA ainda não foi configurada nesta conta. Fale com o suporte AgapeFood.');
+    throw new ErroAgapeIA(503, 'Configure sua chave da Anthropic para ativar a Ágape IA. Vá em Ágape IA → Configurar chave.');
   }
 
   const anteriores = await prisma.mensagemIA.findMany({
