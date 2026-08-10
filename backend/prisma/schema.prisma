@@ -160,6 +160,28 @@ enum PrioridadePrintJob {
   VIP
 }
 
+enum CicloAssinatura {
+  MENSAL
+  TRIMESTRAL
+  SEMESTRAL
+  ANUAL
+}
+
+enum StatusAssinatura {
+  TRIAL
+  ATIVA
+  INADIMPLENTE
+  CANCELADA
+  PENDENTE
+}
+
+enum FormaPagamentoAssinatura {
+  PIX
+  BOLETO
+  CARTAO
+  INDEFINIDO
+}
+
 enum TipoEmpresa {
   RESTAURANTE
   LANCHONETE
@@ -216,7 +238,11 @@ model Empresa {
   youtube      String?
 
   // Marketing - fidelidade
-  percentualCashback Decimal @default(0) @db.Decimal(5, 2)
+  percentualCashback       Decimal @default(0) @db.Decimal(5, 2)
+  mensagemCardapioWhatsapp String? @db.Text
+
+  // Termos legais
+  termosAceitosEm DateTime?
 
   usuarios              Usuario[]
   categorias            Categoria[]
@@ -240,8 +266,67 @@ model Empresa {
   avaliacoes            Avaliacao[]
   impressoras           Printer[]
   printJobs             PrintJob[]
+  otpsCliente           OtpCliente[]
+  assinatura            Assinatura?
 
   @@map("empresas")
+}
+
+model Plano {
+  id        String          @id @default(uuid())
+  nome      String
+  descricao String?
+  preco     Decimal         @db.Decimal(10, 2)
+  ciclo     CicloAssinatura @default(MENSAL)
+  ativo     Boolean         @default(true)
+  ordem     Int             @default(0)
+  criadoEm  DateTime        @default(now())
+
+  assinaturas Assinatura[]
+
+  @@map("planos")
+}
+
+model Assinatura {
+  id                 String                   @id @default(uuid())
+  status             StatusAssinatura         @default(TRIAL)
+  formaPagamento     FormaPagamentoAssinatura @default(INDEFINIDO)
+  inicioTrialEm      DateTime?
+  fimTrialEm         DateTime?
+  proximaCobrancaEm  DateTime?
+  canceladaEm        DateTime?
+  motivoCancelamento String?
+  criadoEm           DateTime                 @default(now())
+  atualizadoEm       DateTime                 @updatedAt
+
+  asaasCustomerId     String?
+  asaasSubscriptionId String?
+
+  empresaId String  @unique
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+  planoId   String
+  plano     Plano   @relation(fields: [planoId], references: [id])
+
+  cobrancas Cobranca[]
+
+  @@map("assinaturas")
+}
+
+model Cobranca {
+  id             String                    @id @default(uuid())
+  valor          Decimal                   @db.Decimal(10, 2)
+  status         String
+  vencimento     DateTime
+  pagoEm         DateTime?
+  formaPagamento FormaPagamentoAssinatura?
+  asaasPaymentId String?                   @unique
+  linkPagamento  String?                   @db.Text
+  criadoEm       DateTime                  @default(now())
+
+  assinaturaId String
+  assinatura   Assinatura @relation(fields: [assinaturaId], references: [id])
+
+  @@map("cobrancas")
 }
 
 model Usuario {
@@ -335,6 +420,7 @@ model Produto {
   pedidoItens          PedidoItem[]
   lotes                Lote[]
   movimentacoesEstoque MovimentacaoEstoque[]
+  favoritos            Favorito[]
 
   @@map("produtos")
 }
@@ -421,13 +507,18 @@ model ContaReceber {
 }
 
 model Cliente {
-  id             String    @id @default(uuid())
-  nome           String?
-  telefone       String
-  email          String?
-  dataNascimento DateTime?
-  saldoCashback  Decimal   @default(0) @db.Decimal(10, 2)
-  criadoEm       DateTime  @default(now())
+  id                 String    @id @default(uuid())
+  nome               String?
+  telefone           String
+  email              String?
+  senhaHash          String?
+  dataNascimento     DateTime?
+  saldoCashback      Decimal   @default(0) @db.Decimal(10, 2)
+  aceitaComunicacoes Boolean   @default(true)
+  ativo              Boolean   @default(true)
+  excluidoEm         DateTime?
+  criadoEm           DateTime  @default(now())
+  ultimoAcessoEm     DateTime?
 
   empresaId String
   empresa   Empresa @relation(fields: [empresaId], references: [id])
@@ -435,9 +526,60 @@ model Cliente {
   pedidos            Pedido[]
   avaliacoes         Avaliacao[]
   transacoesCashback TransacaoCashback[]
+  enderecos          EnderecoCliente[]
+  favoritos          Favorito[]
 
   @@unique([empresaId, telefone])
   @@map("clientes")
+}
+
+model EnderecoCliente {
+  id              String   @id @default(uuid())
+  apelido         String   @default("Casa")
+  cep             String?
+  endereco        String
+  numero          String?
+  complemento     String?
+  bairro          String?
+  cidade          String?
+  estado          String?
+  pontoReferencia String?
+  principal       Boolean  @default(false)
+  criadoEm        DateTime @default(now())
+
+  clienteId String
+  cliente   Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+
+  @@map("enderecos_cliente")
+}
+
+model Favorito {
+  id       String   @id @default(uuid())
+  criadoEm DateTime @default(now())
+
+  clienteId String
+  cliente   Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  produtoId String
+  produto   Produto @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+
+  @@unique([clienteId, produtoId])
+  @@map("favoritos")
+}
+
+model OtpCliente {
+  id           String    @id @default(uuid())
+  telefone     String
+  codigoHash   String
+  expiresAt    DateTime
+  tentativas   Int       @default(0)
+  verificadoEm DateTime?
+  criadoEm     DateTime  @default(now())
+
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+
+  @@index([empresaId, telefone])
+  @@map("otps_cliente")
 }
 
 model TransacaoCashback {

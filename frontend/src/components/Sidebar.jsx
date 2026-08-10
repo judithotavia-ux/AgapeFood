@@ -14,7 +14,8 @@ const ITENS_ATIVOS = [
   { to: '/financeiro', label: 'Financeiro', icone: '📈' },
   { to: '/marketing', label: 'Marketing', icone: '📢' },
   { to: '/central-impressao', label: 'Central de Impressão', icone: '🖨️' },
-  { to: '/impressoras', label: 'Impressoras', icone: '⚙️' }
+  { to: '/impressoras', label: 'Impressoras', icone: '⚙️' },
+  { to: '/assinatura', label: 'Assinatura', icone: '💳' }
 ];
 
 const ITENS_FUTUROS = [

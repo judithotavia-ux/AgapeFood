@@ -27,6 +27,16 @@ async function main() {
     }
   });
 
+  const planos = [
+    { nome: 'Básico', descricao: 'Pedidos, cardápio digital, cozinha, caixa, salão e delivery.', preco: 99.0, ordem: 0 },
+    { nome: 'Profissional', descricao: 'Tudo do Básico + Estoque e Financeiro.', preco: 199.0, ordem: 1 },
+    { nome: 'Completo', descricao: 'Tudo do Profissional + Marketing, IA e Central de Impressão Térmica.', preco: 349.0, ordem: 2 }
+  ];
+  for (const plano of planos) {
+    const existente = await prisma.plano.findFirst({ where: { nome: plano.nome } });
+    if (!existente) await prisma.plano.create({ data: plano });
+  }
+
   console.log('Seed concluído. Login: admin@agapefood.com / senha: agape123');
 }
 

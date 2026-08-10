@@ -4,6 +4,7 @@ const http = require('http');
 const express = require('express');
 const cors = require('cors');
 const { initSocket } = require('./realtime/socket');
+const prisma = require('./prisma/client');
 
 const authRoutes = require('./routes/auth.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
@@ -37,11 +38,29 @@ const iaMarketingRoutes = require('./routes/iaMarketing.routes');
 const impressoraRoutes = require('./routes/impressora.routes');
 const printJobRoutes = require('./routes/printJob.routes');
 const impressaoDashboardRoutes = require('./routes/impressaoDashboard.routes');
+const assinaturaRoutes = require('./routes/assinatura.routes');
+const webhookAsaasRoutes = require('./routes/webhookAsaas.routes');
+
+function logErroEstruturado(origem, err, req) {
+  console.error(JSON.stringify({
+    nivel: 'erro',
+    origem,
+    quando: new Date().toISOString(),
+    mensagem: err?.message || String(err),
+    metodo: req?.method,
+    rota: req?.originalUrl,
+    empresaId: req?.usuario?.empresaId || null,
+    stack: err?.stack
+  }));
+}
 
 // Express 4 nao repassa rejeicoes de handlers async pro error handler abaixo;
 // sem isso, uma rejeicao nao tratada em qualquer rota derruba o processo inteiro.
 process.on('unhandledRejection', (err) => {
-  console.error('Unhandled rejection:', err);
+  logErroEstruturado('unhandledRejection', err);
+});
+process.on('uncaughtException', (err) => {
+  logErroEstruturado('uncaughtException', err);
 });
 
 const app = express();
@@ -50,7 +69,15 @@ app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-app.get('/api/health', (req, res) => res.json({ ok: true, servico: 'AgapeFood API' }));
+app.get('/api/health', async (req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ ok: true, servico: 'AgapeFood API', banco: 'ok' });
+  } catch (e) {
+    logErroEstruturado('health-check-db', e, req);
+    res.status(503).json({ ok: false, servico: 'AgapeFood API', banco: 'indisponível' });
+  }
+});
 
 app.use('/api/auth', authRoutes);
 app.use('/api/dashboard', dashboardRoutes);
@@ -84,12 +111,14 @@ app.use('/api/ia-marketing', iaMarketingRoutes);
 app.use('/api/impressoras', impressoraRoutes);
 app.use('/api/print-jobs', printJobRoutes);
 app.use('/api/impressao', impressaoDashboardRoutes);
+app.use('/api/assinatura', assinaturaRoutes);
+app.use('/api/webhooks/asaas', webhookAsaasRoutes);
 
 app.use((req, res) => res.status(404).json({ erro: 'Rota não encontrada.' }));
 
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
-  console.error(err);
+  logErroEstruturado('express-error-handler', err, req);
   res.status(500).json({ erro: 'Erro interno no servidor.' });
 });
 

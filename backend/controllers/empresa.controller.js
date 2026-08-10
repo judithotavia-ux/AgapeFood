@@ -30,7 +30,7 @@ async function gerarSlugUnico(base) {
 }
 
 async function registrar(req, res) {
-  const { empresa, endereco, contatos, responsavel } = req.body || {};
+  const { empresa, endereco, contatos, responsavel, aceitaTermos } = req.body || {};
 
   if (!empresa?.nomeFantasia || !empresa.nomeFantasia.trim()) {
     return res.status(400).json({ erro: 'Informe o nome fantasia da empresa.' });
@@ -39,6 +39,7 @@ async function registrar(req, res) {
   if (!responsavel?.email || !responsavel.email.trim()) return res.status(400).json({ erro: 'Informe o e-mail do responsável.' });
   if (!responsavel?.senha || responsavel.senha.length < 6) return res.status(400).json({ erro: 'A senha deve ter no mínimo 6 caracteres.' });
   if (responsavel.senha !== responsavel.confirmarSenha) return res.status(400).json({ erro: 'As senhas não coincidem.' });
+  if (!aceitaTermos) return res.status(400).json({ erro: 'É necessário aceitar os Termos de Uso e a Política de Privacidade.' });
 
   const emailLimpo = String(responsavel.email).toLowerCase().trim();
   const emailExistente = await prisma.usuario.findUnique({ where: { email: emailLimpo } });
@@ -90,7 +91,9 @@ async function registrar(req, res) {
         instagram: contatos?.instagram || null,
         facebook: contatos?.facebook || null,
         tiktok: contatos?.tiktok || null,
-        youtube: contatos?.youtube || null
+        youtube: contatos?.youtube || null,
+
+        termosAceitosEm: new Date()
       }
     });
 
@@ -115,6 +118,22 @@ async function registrar(req, res) {
     await tx.canalEntregaConfig.createMany({
       data: TIPOS_CANAL.map((tipo) => ({ tipo, ativo: tipo === 'MOTOBOY_PROPRIO', empresaId: novaEmpresa.id }))
     });
+
+    const planoInicial = await tx.plano.findFirst({ where: { ativo: true }, orderBy: { ordem: 'asc' } });
+    if (planoInicial) {
+      const agora = new Date();
+      const fimTrial = new Date(agora.getTime() + 14 * 24 * 60 * 60 * 1000);
+      await tx.assinatura.create({
+        data: {
+          empresaId: novaEmpresa.id,
+          planoId: planoInicial.id,
+          status: 'TRIAL',
+          inicioTrialEm: agora,
+          fimTrialEm: fimTrial,
+          proximaCobrancaEm: fimTrial
+        }
+      });
+    }
 
     return { novaEmpresa, admin };
   });

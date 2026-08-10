@@ -19,6 +19,9 @@ import Marketing from './pages/Marketing';
 import AvaliacaoPublica from './pages/AvaliacaoPublica';
 import Impressoras from './pages/Impressoras';
 import CentralImpressao from './pages/CentralImpressao';
+import TermosDeUso from './pages/TermosDeUso';
+import PoliticaPrivacidade from './pages/PoliticaPrivacidade';
+import Assinatura from './pages/Assinatura';
 import CadastroEmpresa from './pages/CadastroEmpresa';
 
 export default function App() {
@@ -30,6 +33,8 @@ export default function App() {
           <Route path="/cadastro-empresa" element={<CadastroEmpresa />} />
           <Route path="/cardapio/:slug" element={<CardapioPublico />} />
           <Route path="/avaliacao/:pedidoId" element={<AvaliacaoPublica />} />
+          <Route path="/termos-de-uso" element={<TermosDeUso />} />
+          <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
           <Route
             path="/dashboard"
             element={
@@ -147,6 +152,14 @@ export default function App() {
             element={
               <RotaProtegida>
                 <CentralImpressao />
+              </RotaProtegida>
+            }
+          />
+          <Route
+            path="/assinatura"
+            element={
+              <RotaProtegida>
+                <Assinatura />
               </RotaProtegida>
             }
           />

@@ -1,6 +1,12 @@
 const jwt = require('jsonwebtoken');
+const prisma = require('../prisma/client');
+const { statusEfetivo } = require('../controllers/assinatura.controller');
 
-function autenticar(req, res, next) {
+// Rotas que continuam acessiveis mesmo com a assinatura vencida/cancelada - a empresa precisa
+// conseguir ver e pagar a propria fatura mesmo estando bloqueada de usar o resto do sistema.
+const PREFIXOS_LIVRES_DE_ASSINATURA = ['/api/assinatura', '/api/auth'];
+
+async function autenticar(req, res, next) {
   const header = req.headers.authorization || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;
 
@@ -8,13 +14,29 @@ function autenticar(req, res, next) {
     return res.status(401).json({ erro: 'Token não informado.' });
   }
 
+  let payload;
   try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    payload = jwt.verify(token, process.env.JWT_SECRET);
     req.usuario = payload;
-    next();
   } catch (e) {
     return res.status(401).json({ erro: 'Token inválido ou expirado.' });
   }
+
+  if (PREFIXOS_LIVRES_DE_ASSINATURA.some((p) => req.baseUrl.startsWith(p)) || !payload.empresaId) {
+    return next();
+  }
+
+  try {
+    const assinatura = await prisma.assinatura.findUnique({ where: { empresaId: payload.empresaId } });
+    const efetivo = statusEfetivo(assinatura);
+    if (efetivo.bloqueado) {
+      return res.status(402).json({ erro: efetivo.motivo || 'Assinatura inativa.', bloqueadoPorAssinatura: true });
+    }
+  } catch (e) {
+    console.error('Erro ao verificar assinatura:', e);
+  }
+
+  next();
 }
 
 function exigirPapel(...papeisPermitidos) {

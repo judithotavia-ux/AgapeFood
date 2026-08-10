@@ -17,6 +17,9 @@ api.interceptors.response.use(
       localStorage.removeItem('agapefood_token');
       if (window.location.pathname !== '/login') window.location.href = '/login';
     }
+    if (error.response?.status === 402 && error.response?.data?.bloqueadoPorAssinatura) {
+      if (window.location.pathname !== '/assinatura') window.location.href = '/assinatura';
+    }
     return Promise.reject(error);
   }
 );

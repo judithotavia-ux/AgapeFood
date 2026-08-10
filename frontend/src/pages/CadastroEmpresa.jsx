@@ -26,6 +26,7 @@ export default function CadastroEmpresa() {
 
   const [buscandoCnpj, setBuscandoCnpj] = useState(false);
   const [buscandoCep, setBuscandoCep] = useState(false);
+  const [aceitaTermos, setAceitaTermos] = useState(false);
   const [erro, setErro] = useState('');
   const [enviando, setEnviando] = useState(false);
 
@@ -86,6 +87,7 @@ export default function CadastroEmpresa() {
       if (!responsavel.email.trim()) return 'Informe o e-mail do responsável.';
       if (!responsavel.senha || responsavel.senha.length < 6) return 'A senha deve ter no mínimo 6 caracteres.';
       if (responsavel.senha !== responsavel.confirmarSenha) return 'As senhas não coincidem.';
+      if (!aceitaTermos) return 'Você precisa aceitar os Termos de Uso e a Política de Privacidade para continuar.';
     }
     return '';
   }
@@ -109,7 +111,7 @@ export default function CadastroEmpresa() {
     setErro('');
     setEnviando(true);
     try {
-      const resposta = await empresaService.registrarEmpresa({ empresa, endereco, contatos, responsavel });
+      const resposta = await empresaService.registrarEmpresa({ empresa, endereco, contatos, responsavel, aceitaTermos });
       await entrarComToken(resposta.token);
       navigate('/dashboard');
     } catch (e) {
@@ -334,6 +336,17 @@ export default function CadastroEmpresa() {
                   <input type="password" value={responsavel.confirmarSenha} onChange={(e) => setR('confirmarSenha', e.target.value)} />
                 </div>
               </div>
+
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginTop: 18, textTransform: 'none', fontSize: 12.5, color: 'var(--texto)', cursor: 'pointer' }}>
+                <input type="checkbox" checked={aceitaTermos} onChange={(e) => setAceitaTermos(e.target.checked)} style={{ width: 'auto', marginTop: 2 }} />
+                <span>
+                  Li e aceito os{' '}
+                  <a href="/termos-de-uso" target="_blank" rel="noreferrer" style={{ color: 'var(--dourado)' }}>Termos de Uso</a>
+                  {' '}e a{' '}
+                  <a href="/politica-de-privacidade" target="_blank" rel="noreferrer" style={{ color: 'var(--dourado)' }}>Política de Privacidade</a>
+                  {' '}do AgapeFood.
+                </span>
+              </label>
             </div>
           )}
 
