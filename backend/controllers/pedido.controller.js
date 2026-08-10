@@ -1,5 +1,6 @@
 const prisma = require('../prisma/client');
 const { emitirParaEmpresa } = require('../realtime/socket');
+const { criarJobsParaPedido, criarJobCancelamento } = require('../services/impressao.service');
 
 const PROXIMO_STATUS = {
   RECEBIDO: ['PREPARANDO', 'CANCELADO'],
@@ -49,7 +50,7 @@ async function obter(req, res) {
 async function criar(req, res) {
   const {
     tipo, itens, clienteNome, clienteTelefone, clienteEndereco, formaPagamento, taxaEntrega, observacoes, mesaId,
-    canalEntrega, motoboyId, taxaMotoboy, cupomCodigo
+    canalEntrega, motoboyId, taxaMotoboy, cupomCodigo, origem
   } = req.body || {};
 
   if (!tipo) return res.status(400).json({ erro: 'Informe o tipo do pedido.' });
@@ -93,6 +94,7 @@ async function criar(req, res) {
       precoUnitario,
       quantidade,
       observacoes: item.observacoes || null,
+      setorProducao: produto.setorProducao,
       adicionaisJson: adicionaisSelecionados.length
         ? JSON.stringify(adicionaisSelecionados.map((a) => ({ nome: a.nome, preco: Number(a.preco) })))
         : null
@@ -148,6 +150,8 @@ async function criar(req, res) {
         taxaMotoboy: tipo === 'DELIVERY' && taxaMotoboy !== undefined ? Number(taxaMotoboy) : null,
         clienteId,
         cupomId: cupom?.id || null,
+        garcomNome: tipo === 'MESA' ? req.usuario.nome : null,
+        origemPedido: origem || 'PAINEL',
         itens: { create: itensParaCriar }
       },
       include: { itens: true, mesa: true, motoboy: true }
@@ -157,6 +161,11 @@ async function criar(req, res) {
 
   emitirParaEmpresa(req.usuario.empresaId, 'pedido:novo', pedido);
   res.status(201).json(pedido);
+
+  console.log('[DEBUG] chamando criarJobsParaPedido para pedido', pedido.id, 'com', pedido.itens.length, 'itens');
+  criarJobsParaPedido(pedido)
+    .then((jobs) => console.log('[DEBUG] criarJobsParaPedido retornou', jobs.length, 'jobs'))
+    .catch((erro) => console.error('Falha ao criar jobs de impressão:', erro));
 }
 
 async function atualizarStatus(req, res) {
@@ -189,10 +198,15 @@ async function atualizarStatus(req, res) {
 
   emitirParaEmpresa(req.usuario.empresaId, 'pedido:atualizado', atualizado);
   res.json(atualizado);
+
+  if (status === 'CANCELADO') {
+    criarJobCancelamento(atualizado, 'Pedido cancelado.').catch((erro) => console.error('Falha ao criar job de cancelamento:', erro));
+  }
 }
 
 async function cancelar(req, res) {
   const { id } = req.params;
+  const { motivo } = req.body || {};
   const pedido = await prisma.pedido.findFirst({ where: { id, empresaId: req.usuario.empresaId } });
   if (!pedido) return res.status(404).json({ erro: 'Pedido não encontrado.' });
   if (['ENTREGUE', 'CANCELADO'].includes(pedido.status)) {
@@ -202,6 +216,8 @@ async function cancelar(req, res) {
   const atualizado = await prisma.pedido.update({ where: { id }, data: { status: 'CANCELADO' } });
   emitirParaEmpresa(req.usuario.empresaId, 'pedido:atualizado', atualizado);
   res.json(atualizado);
+
+  criarJobCancelamento(atualizado, motivo).catch((erro) => console.error('Falha ao criar job de cancelamento:', erro));
 }
 
 module.exports = { listar, obter, criar, atualizarStatus, cancelar };

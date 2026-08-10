@@ -17,6 +17,8 @@ import Estoque from './pages/Estoque';
 import Financeiro from './pages/Financeiro';
 import Marketing from './pages/Marketing';
 import AvaliacaoPublica from './pages/AvaliacaoPublica';
+import Impressoras from './pages/Impressoras';
+import CentralImpressao from './pages/CentralImpressao';
 import CadastroEmpresa from './pages/CadastroEmpresa';
 
 export default function App() {
@@ -129,6 +131,22 @@ export default function App() {
             element={
               <RotaProtegida>
                 <Marketing />
+              </RotaProtegida>
+            }
+          />
+          <Route
+            path="/impressoras"
+            element={
+              <RotaProtegida>
+                <Impressoras />
+              </RotaProtegida>
+            }
+          />
+          <Route
+            path="/central-impressao"
+            element={
+              <RotaProtegida>
+                <CentralImpressao />
               </RotaProtegida>
             }
           />

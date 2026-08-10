@@ -1,0 +1,18 @@
+{
+  "name": "agapefood-agente-impressao",
+  "version": "1.0.0",
+  "description": "Agente local de impressao termica do AgapeFood - conecta as impressoras fisicas do estabelecimento ao painel AgapeFood via Socket.IO",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "testar-formatacao": "node testar-formatacao.js"
+  },
+  "license": "UNLICENSED",
+  "type": "commonjs",
+  "dependencies": {
+    "axios": "^1.19.0",
+    "dotenv": "^17.4.2",
+    "node-thermal-printer": "^4.6.0",
+    "socket.io-client": "^4.8.3"
+  }
+}

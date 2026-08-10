@@ -11,8 +11,19 @@ const CAMPOS_ESTOQUE_INICIAIS = {
 
 const CAMPOS_INICIAIS = {
   nome: '', descricao: '', preco: '', precoPromocional: '', categoriaId: '',
-  ingredientes: '', alergenos: '', disponivel: true, destaque: false
+  ingredientes: '', alergenos: '', disponivel: true, destaque: false, setorProducao: 'COZINHA'
 };
+
+const SETORES_PRODUCAO = [
+  { valor: 'COZINHA', label: 'Cozinha' },
+  { valor: 'BAR', label: 'Bar' },
+  { valor: 'CONFEITARIA', label: 'Confeitaria' },
+  { valor: 'PIZZARIA', label: 'Pizzaria' },
+  { valor: 'ACAI', label: 'Açaí' },
+  { valor: 'SALGADOS', label: 'Salgados' },
+  { valor: 'BALCAO', label: 'Balcão' },
+  { valor: 'OUTRO', label: 'Outro' }
+];
 
 export default function ProdutoFormModal({ aberto, produto, categorias, onFechar, onSalvar }) {
   const [campos, setCampos] = useState(CAMPOS_INICIAIS);
@@ -42,7 +53,8 @@ export default function ProdutoFormModal({ aberto, produto, categorias, onFechar
         ingredientes: produto.ingredientes || '',
         alergenos: produto.alergenos || '',
         disponivel: produto.disponivel ?? true,
-        destaque: produto.destaque ?? false
+        destaque: produto.destaque ?? false,
+        setorProducao: produto.setorProducao || 'COZINHA'
       });
       setImagemPreview(produto.imagemUrl || null);
       setAdicionais(produto.adicionais || []);
@@ -210,6 +222,11 @@ export default function ProdutoFormModal({ aberto, produto, categorias, onFechar
             <input value={campos.alergenos} onChange={(e) => set('alergenos', e.target.value)} placeholder="Ex: glúten, lactose, amendoim" />
           </div>
         </div>
+
+        <label>Setor de produção (para qual impressora a comanda deste item vai)</label>
+        <select value={campos.setorProducao} onChange={(e) => set('setorProducao', e.target.value)} style={{ marginBottom: 14 }}>
+          {SETORES_PRODUCAO.map((s) => <option key={s.valor} value={s.valor}>{s.label}</option>)}
+        </select>
 
         <div style={{ display: 'flex', gap: 20, marginBottom: 18 }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, textTransform: 'none', fontSize: 13, color: 'var(--texto)', cursor: 'pointer' }}>

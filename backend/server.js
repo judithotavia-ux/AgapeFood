@@ -34,6 +34,9 @@ const campanhaRoutes = require('./routes/campanha.routes');
 const avaliacaoRoutes = require('./routes/avaliacao.routes');
 const marketingDashboardRoutes = require('./routes/marketingDashboard.routes');
 const iaMarketingRoutes = require('./routes/iaMarketing.routes');
+const impressoraRoutes = require('./routes/impressora.routes');
+const printJobRoutes = require('./routes/printJob.routes');
+const impressaoDashboardRoutes = require('./routes/impressaoDashboard.routes');
 
 // Express 4 nao repassa rejeicoes de handlers async pro error handler abaixo;
 // sem isso, uma rejeicao nao tratada em qualquer rota derruba o processo inteiro.
@@ -78,6 +81,9 @@ app.use('/api/campanhas', campanhaRoutes);
 app.use('/api/avaliacoes', avaliacaoRoutes);
 app.use('/api/marketing', marketingDashboardRoutes);
 app.use('/api/ia-marketing', iaMarketingRoutes);
+app.use('/api/impressoras', impressoraRoutes);
+app.use('/api/print-jobs', printJobRoutes);
+app.use('/api/impressao', impressaoDashboardRoutes);
 
 app.use((req, res) => res.status(404).json({ erro: 'Rota não encontrada.' }));
 

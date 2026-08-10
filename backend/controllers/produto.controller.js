@@ -38,12 +38,15 @@ async function obter(req, res) {
   res.json(produto);
 }
 
+const SETORES_PRODUCAO_VALIDOS = ['COZINHA', 'BAR', 'CONFEITARIA', 'PIZZARIA', 'ACAI', 'SALGADOS', 'BALCAO', 'GARCOM', 'CAIXA', 'DELIVERY', 'OUTRO'];
+
 async function criar(req, res) {
-  const { nome, descricao, preco, precoPromocional, categoriaId, ingredientes, alergenos, disponivel, destaque, ordem } = req.body || {};
+  const { nome, descricao, preco, precoPromocional, categoriaId, ingredientes, alergenos, disponivel, destaque, ordem, setorProducao } = req.body || {};
 
   if (!nome || !nome.trim()) return res.status(400).json({ erro: 'Informe o nome do produto.' });
   if (!preco || isNaN(Number(preco))) return res.status(400).json({ erro: 'Informe um preço válido.' });
   if (!categoriaId) return res.status(400).json({ erro: 'Selecione uma categoria.' });
+  if (setorProducao && !SETORES_PRODUCAO_VALIDOS.includes(setorProducao)) return res.status(400).json({ erro: 'Setor de produção inválido.' });
 
   const categoria = await prisma.categoria.findFirst({ where: { id: categoriaId, empresaId: req.usuario.empresaId } });
   if (!categoria) return res.status(400).json({ erro: 'Categoria inválida.' });
@@ -60,6 +63,7 @@ async function criar(req, res) {
       disponivel: disponivel !== undefined ? disponivel === 'true' || disponivel === true : true,
       destaque: destaque === 'true' || destaque === true,
       ordem: Number(ordem) || 0,
+      setorProducao: setorProducao || 'COZINHA',
       empresaId: req.usuario.empresaId,
       categoriaId
     }
@@ -73,12 +77,13 @@ async function atualizar(req, res) {
   const existente = await prisma.produto.findFirst({ where: { id, empresaId: req.usuario.empresaId } });
   if (!existente) return res.status(404).json({ erro: 'Produto não encontrado.' });
 
-  const { nome, descricao, preco, precoPromocional, categoriaId, ingredientes, alergenos, disponivel, destaque, ordem, removerImagem } = req.body || {};
+  const { nome, descricao, preco, precoPromocional, categoriaId, ingredientes, alergenos, disponivel, destaque, ordem, removerImagem, setorProducao } = req.body || {};
 
   if (categoriaId) {
     const categoria = await prisma.categoria.findFirst({ where: { id: categoriaId, empresaId: req.usuario.empresaId } });
     if (!categoria) return res.status(400).json({ erro: 'Categoria inválida.' });
   }
+  if (setorProducao && !SETORES_PRODUCAO_VALIDOS.includes(setorProducao)) return res.status(400).json({ erro: 'Setor de produção inválido.' });
 
   let imagemUrl = existente.imagemUrl;
   if (req.file) {
@@ -104,6 +109,7 @@ async function atualizar(req, res) {
       disponivel: disponivel !== undefined ? (disponivel === 'true' || disponivel === true) : existente.disponivel,
       destaque: destaque !== undefined ? (destaque === 'true' || destaque === true) : existente.destaque,
       ordem: ordem !== undefined ? Number(ordem) : existente.ordem,
+      setorProducao: setorProducao || existente.setorProducao,
       categoriaId: categoriaId || existente.categoriaId
     }
   });
