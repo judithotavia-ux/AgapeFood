@@ -54,10 +54,6 @@ export default function Login() {
           {enviando ? 'Entrando…' : 'Entrar'}
         </button>
 
-        <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--texto2)', marginTop: 20 }}>
-          Acesso demo: admin@agapefood.com / agape123
-        </div>
-
         <div style={{ textAlign: 'center', fontSize: 12.5, marginTop: 18, paddingTop: 18, borderTop: '1px solid var(--borda)' }}>
           Ainda não tem conta? <Link to="/cadastro-empresa" style={{ color: 'var(--dourado)', fontWeight: 600 }}>Cadastre sua empresa</Link>
         </div>
