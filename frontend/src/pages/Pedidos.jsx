@@ -24,6 +24,7 @@ export default function Pedidos() {
   const [filtro, setFiltro] = useState('TODOS');
   const [carregando, setCarregando] = useState(true);
   const [aviso, setAviso] = useState(location.state?.pedidoCriado ? `Pedido #${location.state.pedidoCriado} criado com sucesso!` : '');
+  const [linkCopiado, setLinkCopiado] = useState(null);
 
   async function carregar() {
     setCarregando(true);
@@ -59,6 +60,13 @@ export default function Pedidos() {
     if (!confirm(`Cancelar o pedido #${pedido.numero}?`)) return;
     await pedidoService.cancelarPedido(pedido.id);
     carregar();
+  }
+
+  async function copiarLinkAvaliacao(pedido) {
+    const link = `${window.location.origin}/avaliacao/${pedido.id}`;
+    await navigator.clipboard.writeText(link);
+    setLinkCopiado(pedido.id);
+    setTimeout(() => setLinkCopiado(null), 2500);
   }
 
   return (
@@ -114,6 +122,11 @@ export default function Pedidos() {
               ))}
               {!['ENTREGUE', 'CANCELADO'].includes(p.status) && (
                 <button style={{ background: 'none', border: 'none', color: 'var(--erro)', fontSize: 11.5, cursor: 'pointer' }} onClick={() => cancelar(p)}>Cancelar</button>
+              )}
+              {p.status === 'ENTREGUE' && (
+                <button style={{ background: 'none', border: 'none', color: 'var(--dourado)', fontSize: 11.5, cursor: 'pointer' }} onClick={() => copiarLinkAvaliacao(p)}>
+                  {linkCopiado === p.id ? '✓ Link copiado!' : '⭐ Link de avaliação'}
+                </button>
               )}
             </div>
           </div>

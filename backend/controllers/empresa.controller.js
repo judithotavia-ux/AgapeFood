@@ -133,4 +133,26 @@ async function registrar(req, res) {
   });
 }
 
-module.exports = { registrar };
+async function obterMinhaEmpresa(req, res) {
+  const empresa = await prisma.empresa.findUnique({
+    where: { id: req.usuario.empresaId },
+    select: { id: true, nome: true, percentualCashback: true }
+  });
+  res.json(empresa);
+}
+
+async function atualizarCashback(req, res) {
+  const { percentualCashback } = req.body || {};
+  const valor = Number(percentualCashback);
+  if (isNaN(valor) || valor < 0 || valor > 100) {
+    return res.status(400).json({ erro: 'Informe um percentual de cashback entre 0 e 100.' });
+  }
+  const empresa = await prisma.empresa.update({
+    where: { id: req.usuario.empresaId },
+    data: { percentualCashback: valor },
+    select: { id: true, nome: true, percentualCashback: true }
+  });
+  res.json(empresa);
+}
+
+module.exports = { registrar, obterMinhaEmpresa, atualizarCashback };

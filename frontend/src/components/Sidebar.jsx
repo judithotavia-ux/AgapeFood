@@ -11,11 +11,11 @@ const ITENS_ATIVOS = [
   { to: '/salao', label: 'Salão', icone: '🍽️' },
   { to: '/delivery', label: 'Delivery', icone: '🚚' },
   { to: '/estoque', label: 'Estoque', icone: '📦' },
-  { to: '/financeiro', label: 'Financeiro', icone: '📈' }
+  { to: '/financeiro', label: 'Financeiro', icone: '📈' },
+  { to: '/marketing', label: 'Marketing', icone: '📢' }
 ];
 
 const ITENS_FUTUROS = [
-  { label: 'Marketing', icone: '📢' },
   { label: 'Ágape IA', icone: '🤖' }
 ];
 

@@ -49,7 +49,7 @@ async function obter(req, res) {
 async function criar(req, res) {
   const {
     tipo, itens, clienteNome, clienteTelefone, clienteEndereco, formaPagamento, taxaEntrega, observacoes, mesaId,
-    canalEntrega, motoboyId, taxaMotoboy
+    canalEntrega, motoboyId, taxaMotoboy, cupomCodigo
   } = req.body || {};
 
   if (!tipo) return res.status(400).json({ erro: 'Informe o tipo do pedido.' });
@@ -102,28 +102,58 @@ async function criar(req, res) {
   const taxa = Number(taxaEntrega) || 0;
   valorTotal += taxa;
 
+  let cupom = null;
+  let valorDesconto = 0;
+  if (cupomCodigo) {
+    cupom = await prisma.cupom.findFirst({ where: { empresaId: req.usuario.empresaId, codigo: String(cupomCodigo).toUpperCase() } });
+    if (!cupom) return res.status(400).json({ erro: 'Cupom não encontrado.' });
+    if (!cupom.ativo) return res.status(400).json({ erro: 'Esse cupom está inativo.' });
+    if (cupom.validoAte && new Date(cupom.validoAte) < new Date()) return res.status(400).json({ erro: 'Esse cupom expirou.' });
+    if (cupom.usoMaximo !== null && cupom.usosAtuais >= cupom.usoMaximo) return res.status(400).json({ erro: 'Esse cupom atingiu o limite de usos.' });
+
+    valorDesconto = cupom.tipoDesconto === 'PERCENTUAL' ? valorTotal * (Number(cupom.valor) / 100) : Number(cupom.valor);
+    valorDesconto = Math.min(valorDesconto, valorTotal);
+    valorTotal -= valorDesconto;
+  }
+
+  let clienteId = null;
+  if (clienteTelefone && clienteTelefone.trim()) {
+    const cliente = await prisma.cliente.upsert({
+      where: { empresaId_telefone: { empresaId: req.usuario.empresaId, telefone: clienteTelefone.trim() } },
+      update: { nome: clienteNome || undefined },
+      create: { empresaId: req.usuario.empresaId, telefone: clienteTelefone.trim(), nome: clienteNome || null }
+    });
+    clienteId = cliente.id;
+  }
+
   const numero = await proximoNumeroPedido(req.usuario.empresaId);
 
-  const pedido = await prisma.pedido.create({
-    data: {
-      numero,
-      tipo,
-      clienteNome: clienteNome || null,
-      clienteTelefone: clienteTelefone || null,
-      clienteEndereco: clienteEndereco || null,
-      formaPagamento: formaPagamento || null,
-      taxaEntrega: taxa,
-      valorTotal,
-      observacoes: observacoes || null,
-      empresaId: req.usuario.empresaId,
-      mesaId: tipo === 'MESA' ? mesaId : null,
-      canalEntrega: tipo === 'DELIVERY' ? (canalEntrega || 'MOTOBOY_PROPRIO') : null,
-      motoboyId: tipo === 'DELIVERY' && motoboyId ? motoboyId : null,
-      taxaMotoboy: tipo === 'DELIVERY' && taxaMotoboy !== undefined ? Number(taxaMotoboy) : null,
-      itens: { create: itensParaCriar }
-    },
-    include: { itens: true, mesa: true, motoboy: true }
-  });
+  const [pedido] = await prisma.$transaction([
+    prisma.pedido.create({
+      data: {
+        numero,
+        tipo,
+        clienteNome: clienteNome || null,
+        clienteTelefone: clienteTelefone || null,
+        clienteEndereco: clienteEndereco || null,
+        formaPagamento: formaPagamento || null,
+        taxaEntrega: taxa,
+        valorTotal,
+        valorDesconto,
+        observacoes: observacoes || null,
+        empresaId: req.usuario.empresaId,
+        mesaId: tipo === 'MESA' ? mesaId : null,
+        canalEntrega: tipo === 'DELIVERY' ? (canalEntrega || 'MOTOBOY_PROPRIO') : null,
+        motoboyId: tipo === 'DELIVERY' && motoboyId ? motoboyId : null,
+        taxaMotoboy: tipo === 'DELIVERY' && taxaMotoboy !== undefined ? Number(taxaMotoboy) : null,
+        clienteId,
+        cupomId: cupom?.id || null,
+        itens: { create: itensParaCriar }
+      },
+      include: { itens: true, mesa: true, motoboy: true }
+    }),
+    ...(cupom ? [prisma.cupom.update({ where: { id: cupom.id }, data: { usosAtuais: { increment: 1 } } })] : [])
+  ]);
 
   emitirParaEmpresa(req.usuario.empresaId, 'pedido:novo', pedido);
   res.status(201).json(pedido);
@@ -142,6 +172,21 @@ async function atualizarStatus(req, res) {
   }
 
   const atualizado = await prisma.pedido.update({ where: { id }, data: { status } });
+
+  if (status === 'ENTREGUE' && pedido.clienteId) {
+    const empresa = await prisma.empresa.findUnique({ where: { id: req.usuario.empresaId }, select: { percentualCashback: true } });
+    const percentual = Number(empresa.percentualCashback);
+    if (percentual > 0) {
+      const valorCashback = Number(atualizado.valorTotal) * (percentual / 100);
+      await prisma.$transaction([
+        prisma.transacaoCashback.create({
+          data: { clienteId: pedido.clienteId, tipo: 'CREDITO', valor: valorCashback, motivo: `Pedido #${atualizado.numero}` }
+        }),
+        prisma.cliente.update({ where: { id: pedido.clienteId }, data: { saldoCashback: { increment: valorCashback } } })
+      ]);
+    }
+  }
+
   emitirParaEmpresa(req.usuario.empresaId, 'pedido:atualizado', atualizado);
   res.json(atualizado);
 }

@@ -15,6 +15,8 @@ import Salao from './pages/Salao';
 import Delivery from './pages/Delivery';
 import Estoque from './pages/Estoque';
 import Financeiro from './pages/Financeiro';
+import Marketing from './pages/Marketing';
+import AvaliacaoPublica from './pages/AvaliacaoPublica';
 import CadastroEmpresa from './pages/CadastroEmpresa';
 
 export default function App() {
@@ -25,6 +27,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/cadastro-empresa" element={<CadastroEmpresa />} />
           <Route path="/cardapio/:slug" element={<CardapioPublico />} />
+          <Route path="/avaliacao/:pedidoId" element={<AvaliacaoPublica />} />
           <Route
             path="/dashboard"
             element={
@@ -118,6 +121,14 @@ export default function App() {
             element={
               <RotaProtegida>
                 <Financeiro />
+              </RotaProtegida>
+            }
+          />
+          <Route
+            path="/marketing"
+            element={
+              <RotaProtegida>
+                <Marketing />
               </RotaProtegida>
             }
           />

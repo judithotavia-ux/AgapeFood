@@ -28,6 +28,12 @@ const categoriaFinanceiraRoutes = require('./routes/categoriaFinanceira.routes')
 const contaPagarRoutes = require('./routes/contaPagar.routes');
 const contaReceberRoutes = require('./routes/contaReceber.routes');
 const financeiroDashboardRoutes = require('./routes/financeiroDashboard.routes');
+const clienteRoutes = require('./routes/cliente.routes');
+const cupomRoutes = require('./routes/cupom.routes');
+const campanhaRoutes = require('./routes/campanha.routes');
+const avaliacaoRoutes = require('./routes/avaliacao.routes');
+const marketingDashboardRoutes = require('./routes/marketingDashboard.routes');
+const iaMarketingRoutes = require('./routes/iaMarketing.routes');
 
 // Express 4 nao repassa rejeicoes de handlers async pro error handler abaixo;
 // sem isso, uma rejeicao nao tratada em qualquer rota derruba o processo inteiro.
@@ -66,6 +72,12 @@ app.use('/api/categorias-financeiras', categoriaFinanceiraRoutes);
 app.use('/api/contas-pagar', contaPagarRoutes);
 app.use('/api/contas-receber', contaReceberRoutes);
 app.use('/api/financeiro', financeiroDashboardRoutes);
+app.use('/api/clientes', clienteRoutes);
+app.use('/api/cupons', cupomRoutes);
+app.use('/api/campanhas', campanhaRoutes);
+app.use('/api/avaliacoes', avaliacaoRoutes);
+app.use('/api/marketing', marketingDashboardRoutes);
+app.use('/api/ia-marketing', iaMarketingRoutes);
 
 app.use((req, res) => res.status(404).json({ erro: 'Rota não encontrada.' }));
 
