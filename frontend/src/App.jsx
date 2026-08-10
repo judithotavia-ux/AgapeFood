@@ -23,6 +23,8 @@ import TermosDeUso from './pages/TermosDeUso';
 import PoliticaPrivacidade from './pages/PoliticaPrivacidade';
 import Assinatura from './pages/Assinatura';
 import CadastroEmpresa from './pages/CadastroEmpresa';
+import AgapeIAChat from './pages/AgapeIAChat';
+import AgapeIADashboard from './pages/AgapeIADashboard';
 
 export default function App() {
   return (
@@ -160,6 +162,22 @@ export default function App() {
             element={
               <RotaProtegida>
                 <Assinatura />
+              </RotaProtegida>
+            }
+          />
+          <Route
+            path="/agape-ia"
+            element={
+              <RotaProtegida>
+                <AgapeIAChat />
+              </RotaProtegida>
+            }
+          />
+          <Route
+            path="/agape-ia/dashboard"
+            element={
+              <RotaProtegida>
+                <AgapeIADashboard />
               </RotaProtegida>
             }
           />

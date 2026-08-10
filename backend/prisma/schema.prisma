@@ -268,6 +268,9 @@ model Empresa {
   printJobs             PrintJob[]
   otpsCliente           OtpCliente[]
   assinatura            Assinatura?
+  conversasIA           ConversaIA[]
+  acoesIA               AcaoIA[]
+  tarefasIA             TarefaIA[]
 
   @@map("empresas")
 }
@@ -353,6 +356,7 @@ model Usuario {
   movimentacoesCaixa   MovimentacaoCaixa[]
   movimentacoesEstoque MovimentacaoEstoque[]
   printLogs            PrintLog[]
+  conversasIA          ConversaIA[]
 
   @@map("usuarios")
 }
@@ -528,6 +532,8 @@ model Cliente {
   transacoesCashback TransacaoCashback[]
   enderecos          EnderecoCliente[]
   favoritos          Favorito[]
+  conversasIA        ConversaIA[]
+  acoesIA            AcaoIA[]
 
   @@unique([empresaId, telefone])
   @@map("clientes")
@@ -951,4 +957,104 @@ model MovimentacaoCaixa {
   usuario   Usuario @relation(fields: [usuarioId], references: [id])
 
   @@map("movimentacoes_caixa")
+}
+
+enum CanalIA {
+  PAINEL_ADMIN
+  WHATSAPP
+  INSTAGRAM
+  FACEBOOK
+  SITE
+  APP
+  TELEGRAM
+  EMAIL
+}
+
+enum PapelMensagemIA {
+  USUARIO
+  ASSISTENTE
+  FERRAMENTA
+}
+
+enum TipoAcaoIA {
+  PERGUNTA_RESPONDIDA
+  PEDIDO_CRIADO
+  PROMOCAO_CRIADA
+  CAMPANHA_CRIADA
+  RELATORIO_GERADO
+  TAREFA_CRIADA
+}
+
+enum StatusTarefaIA {
+  PENDENTE
+  EM_ANDAMENTO
+  CONCLUIDA
+}
+
+model ConversaIA {
+  id           String   @id @default(uuid())
+  canal        CanalIA  @default(PAINEL_ADMIN)
+  titulo       String?
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+
+  usuarioId String?
+  usuario   Usuario? @relation(fields: [usuarioId], references: [id])
+
+  clienteId String?
+  cliente   Cliente? @relation(fields: [clienteId], references: [id])
+
+  mensagens MensagemIA[]
+  acoes     AcaoIA[]
+
+  @@map("conversas_ia")
+}
+
+model MensagemIA {
+  id              String          @id @default(uuid())
+  papel           PapelMensagemIA
+  conteudo        String          @db.Text
+  ferramentaUsada String?
+  criadoEm        DateTime        @default(now())
+
+  conversaId String
+  conversa   ConversaIA @relation(fields: [conversaId], references: [id], onDelete: Cascade)
+
+  @@map("mensagens_ia")
+}
+
+model AcaoIA {
+  id           String     @id @default(uuid())
+  tipo         TipoAcaoIA
+  referenciaId String?
+  detalhe      String?    @db.Text
+  criadoEm     DateTime   @default(now())
+
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+
+  conversaId String?
+  conversa   ConversaIA? @relation(fields: [conversaId], references: [id])
+
+  clienteId String?
+  cliente   Cliente? @relation(fields: [clienteId], references: [id])
+
+  @@map("acoes_ia")
+}
+
+model TarefaIA {
+  id          String         @id @default(uuid())
+  titulo      String
+  descricao   String?        @db.Text
+  status      StatusTarefaIA @default(PENDENTE)
+  criadoEm    DateTime       @default(now())
+  concluidaEm DateTime?
+
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+
+  @@map("tarefas_ia")
 }

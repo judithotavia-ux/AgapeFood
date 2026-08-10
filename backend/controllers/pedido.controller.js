@@ -47,25 +47,33 @@ async function obter(req, res) {
   res.json(pedido);
 }
 
-async function criar(req, res) {
+class ErroPedido extends Error {
+  constructor(status, erro) {
+    super(erro);
+    this.status = status;
+    this.erro = erro;
+  }
+}
+
+async function criarPedidoCore(empresaId, garcomNome, dados) {
   const {
     tipo, itens, clienteNome, clienteTelefone, clienteEndereco, formaPagamento, taxaEntrega, observacoes, mesaId,
     canalEntrega, motoboyId, taxaMotoboy, cupomCodigo, origem
-  } = req.body || {};
+  } = dados || {};
 
-  if (!tipo) return res.status(400).json({ erro: 'Informe o tipo do pedido.' });
-  if (!Array.isArray(itens) || !itens.length) return res.status(400).json({ erro: 'O pedido precisa ter ao menos um item.' });
-  if (tipo === 'DELIVERY' && !clienteEndereco) return res.status(400).json({ erro: 'Informe o endereço de entrega.' });
-  if (tipo === 'MESA' && !mesaId) return res.status(400).json({ erro: 'Selecione a mesa.' });
+  if (!tipo) throw new ErroPedido(400, 'Informe o tipo do pedido.');
+  if (!Array.isArray(itens) || !itens.length) throw new ErroPedido(400, 'O pedido precisa ter ao menos um item.');
+  if (tipo === 'DELIVERY' && !clienteEndereco) throw new ErroPedido(400, 'Informe o endereço de entrega.');
+  if (tipo === 'MESA' && !mesaId) throw new ErroPedido(400, 'Selecione a mesa.');
 
   if (motoboyId) {
-    const motoboy = await prisma.motoboy.findFirst({ where: { id: motoboyId, empresaId: req.usuario.empresaId } });
-    if (!motoboy) return res.status(400).json({ erro: 'Motoboy inválido.' });
+    const motoboy = await prisma.motoboy.findFirst({ where: { id: motoboyId, empresaId } });
+    if (!motoboy) throw new ErroPedido(400, 'Motoboy inválido.');
   }
 
   const produtoIds = itens.map((i) => i.produtoId).filter(Boolean);
   const produtos = await prisma.produto.findMany({
-    where: { id: { in: produtoIds }, empresaId: req.usuario.empresaId },
+    where: { id: { in: produtoIds }, empresaId },
     include: { adicionais: true }
   });
   const mapaProdutos = new Map(produtos.map((p) => [p.id, p]));
@@ -75,7 +83,7 @@ async function criar(req, res) {
 
   for (const item of itens) {
     const produto = mapaProdutos.get(item.produtoId);
-    if (!produto) return res.status(400).json({ erro: 'Um dos produtos selecionados não foi encontrado.' });
+    if (!produto) throw new ErroPedido(400, 'Um dos produtos selecionados não foi encontrado.');
 
     const quantidade = Number(item.quantidade) || 1;
     const precoBase = Number(produto.precoPromocional ?? produto.preco);
@@ -107,11 +115,11 @@ async function criar(req, res) {
   let cupom = null;
   let valorDesconto = 0;
   if (cupomCodigo) {
-    cupom = await prisma.cupom.findFirst({ where: { empresaId: req.usuario.empresaId, codigo: String(cupomCodigo).toUpperCase() } });
-    if (!cupom) return res.status(400).json({ erro: 'Cupom não encontrado.' });
-    if (!cupom.ativo) return res.status(400).json({ erro: 'Esse cupom está inativo.' });
-    if (cupom.validoAte && new Date(cupom.validoAte) < new Date()) return res.status(400).json({ erro: 'Esse cupom expirou.' });
-    if (cupom.usoMaximo !== null && cupom.usosAtuais >= cupom.usoMaximo) return res.status(400).json({ erro: 'Esse cupom atingiu o limite de usos.' });
+    cupom = await prisma.cupom.findFirst({ where: { empresaId, codigo: String(cupomCodigo).toUpperCase() } });
+    if (!cupom) throw new ErroPedido(400, 'Cupom não encontrado.');
+    if (!cupom.ativo) throw new ErroPedido(400, 'Esse cupom está inativo.');
+    if (cupom.validoAte && new Date(cupom.validoAte) < new Date()) throw new ErroPedido(400, 'Esse cupom expirou.');
+    if (cupom.usoMaximo !== null && cupom.usosAtuais >= cupom.usoMaximo) throw new ErroPedido(400, 'Esse cupom atingiu o limite de usos.');
 
     valorDesconto = cupom.tipoDesconto === 'PERCENTUAL' ? valorTotal * (Number(cupom.valor) / 100) : Number(cupom.valor);
     valorDesconto = Math.min(valorDesconto, valorTotal);
@@ -121,14 +129,14 @@ async function criar(req, res) {
   let clienteId = null;
   if (clienteTelefone && clienteTelefone.trim()) {
     const cliente = await prisma.cliente.upsert({
-      where: { empresaId_telefone: { empresaId: req.usuario.empresaId, telefone: clienteTelefone.trim() } },
+      where: { empresaId_telefone: { empresaId, telefone: clienteTelefone.trim() } },
       update: { nome: clienteNome || undefined },
-      create: { empresaId: req.usuario.empresaId, telefone: clienteTelefone.trim(), nome: clienteNome || null }
+      create: { empresaId, telefone: clienteTelefone.trim(), nome: clienteNome || null }
     });
     clienteId = cliente.id;
   }
 
-  const numero = await proximoNumeroPedido(req.usuario.empresaId);
+  const numero = await proximoNumeroPedido(empresaId);
 
   const [pedido] = await prisma.$transaction([
     prisma.pedido.create({
@@ -143,14 +151,14 @@ async function criar(req, res) {
         valorTotal,
         valorDesconto,
         observacoes: observacoes || null,
-        empresaId: req.usuario.empresaId,
+        empresaId,
         mesaId: tipo === 'MESA' ? mesaId : null,
         canalEntrega: tipo === 'DELIVERY' ? (canalEntrega || 'MOTOBOY_PROPRIO') : null,
         motoboyId: tipo === 'DELIVERY' && motoboyId ? motoboyId : null,
         taxaMotoboy: tipo === 'DELIVERY' && taxaMotoboy !== undefined ? Number(taxaMotoboy) : null,
         clienteId,
         cupomId: cupom?.id || null,
-        garcomNome: tipo === 'MESA' ? req.usuario.nome : null,
+        garcomNome: tipo === 'MESA' ? garcomNome : null,
         origemPedido: origem || 'PAINEL',
         itens: { create: itensParaCriar }
       },
@@ -159,13 +167,21 @@ async function criar(req, res) {
     ...(cupom ? [prisma.cupom.update({ where: { id: cupom.id }, data: { usosAtuais: { increment: 1 } } })] : [])
   ]);
 
-  emitirParaEmpresa(req.usuario.empresaId, 'pedido:novo', pedido);
-  res.status(201).json(pedido);
+  emitirParaEmpresa(empresaId, 'pedido:novo', pedido);
 
-  console.log('[DEBUG] chamando criarJobsParaPedido para pedido', pedido.id, 'com', pedido.itens.length, 'itens');
-  criarJobsParaPedido(pedido)
-    .then((jobs) => console.log('[DEBUG] criarJobsParaPedido retornou', jobs.length, 'jobs'))
-    .catch((erro) => console.error('Falha ao criar jobs de impressão:', erro));
+  criarJobsParaPedido(pedido).catch((erro) => console.error('Falha ao criar jobs de impressão:', erro));
+
+  return pedido;
+}
+
+async function criar(req, res) {
+  try {
+    const pedido = await criarPedidoCore(req.usuario.empresaId, req.usuario.nome, req.body || {});
+    res.status(201).json(pedido);
+  } catch (erro) {
+    if (erro instanceof ErroPedido) return res.status(erro.status).json({ erro: erro.erro });
+    throw erro;
+  }
 }
 
 async function atualizarStatus(req, res) {
@@ -220,4 +236,4 @@ async function cancelar(req, res) {
   criarJobCancelamento(atualizado, motivo).catch((erro) => console.error('Falha ao criar job de cancelamento:', erro));
 }
 
-module.exports = { listar, obter, criar, atualizarStatus, cancelar };
+module.exports = { listar, obter, criar, atualizarStatus, cancelar, criarPedidoCore, ErroPedido };

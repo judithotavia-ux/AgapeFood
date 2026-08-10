@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom';
 
 const ITENS_ATIVOS = [
   { to: '/dashboard', label: 'Dashboard', icone: '📊' },
+  { to: '/agape-ia', label: 'Ágape IA', icone: '🤖' },
   { to: '/central-pedidos', label: 'Central de Pedidos', icone: '🔔' },
   { to: '/pedidos', label: 'Pedidos', icone: '🛒' },
   { to: '/garcons', label: 'Garçons', icone: '🧑‍🍳' },
@@ -16,10 +17,6 @@ const ITENS_ATIVOS = [
   { to: '/central-impressao', label: 'Central de Impressão', icone: '🖨️' },
   { to: '/impressoras', label: 'Impressoras', icone: '⚙️' },
   { to: '/assinatura', label: 'Assinatura', icone: '💳' }
-];
-
-const ITENS_FUTUROS = [
-  { label: 'Ágape IA', icone: '🤖' }
 ];
 
 export default function Sidebar() {
@@ -58,26 +55,6 @@ export default function Sidebar() {
           >
             <span>{item.icone}</span> {item.label}
           </NavLink>
-        ))}
-
-        <div style={{ padding: '18px 20px 6px', fontSize: 10, letterSpacing: '.08em', color: 'var(--texto2)' }}>EM BREVE</div>
-        {ITENS_FUTUROS.map((item) => (
-          <div
-            key={item.label}
-            title="Disponível nas próximas fases"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              padding: '9px 20px',
-              fontSize: 13,
-              color: 'var(--texto2)',
-              opacity: 0.55,
-              cursor: 'default'
-            }}
-          >
-            <span>{item.icone}</span> {item.label}
-          </div>
         ))}
       </nav>
     </aside>

@@ -40,6 +40,7 @@ const printJobRoutes = require('./routes/printJob.routes');
 const impressaoDashboardRoutes = require('./routes/impressaoDashboard.routes');
 const assinaturaRoutes = require('./routes/assinatura.routes');
 const webhookAsaasRoutes = require('./routes/webhookAsaas.routes');
+const agapeIaRoutes = require('./routes/agapeIa.routes');
 
 function logErroEstruturado(origem, err, req) {
   console.error(JSON.stringify({
@@ -113,6 +114,7 @@ app.use('/api/print-jobs', printJobRoutes);
 app.use('/api/impressao', impressaoDashboardRoutes);
 app.use('/api/assinatura', assinaturaRoutes);
 app.use('/api/webhooks/asaas', webhookAsaasRoutes);
+app.use('/api/agape-ia', agapeIaRoutes);
 
 app.use((req, res) => res.status(404).json({ erro: 'Rota não encontrada.' }));
 
