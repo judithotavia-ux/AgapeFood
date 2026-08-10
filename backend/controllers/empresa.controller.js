@@ -206,7 +206,13 @@ async function atualizarConfigIA(req, res) {
     return res.status(400).json({ erro: 'Chave inválida. Uma chave da Anthropic começa com "sk-ant-".' });
   }
 
-  const criptografada = criptografar(chaveAnthropic.trim());
+  let criptografada;
+  try {
+    criptografada = criptografar(chaveAnthropic.trim());
+  } catch (erro) {
+    console.error('Falha ao criptografar chave de IA (ENCRYPTION_KEY configurada?):', erro.message);
+    return res.status(500).json({ erro: 'Não foi possível salvar a chave agora. Tente novamente em instantes.' });
+  }
   await prisma.empresa.update({ where: { id: req.usuario.empresaId }, data: { iaChaveAnthropic: criptografada } });
 
   const chave = chaveAnthropic.trim();
