@@ -21,7 +21,7 @@ export const CANAL_ICONE = {
 export const STATUS_CAMPANHA_LABEL = {
   RASCUNHO: 'Rascunho',
   ATIVA: 'Enviada',
-  ENCERRADA: 'Encerrada'
+  CONCLUIDA: 'Concluída'
 };
 
 export const SEGMENTO_CLIENTE_LABEL = {

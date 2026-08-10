@@ -404,7 +404,7 @@ export default function Marketing() {
               <select value={statusCamp} onChange={(e) => setStatusCamp(e.target.value)}>
                 <option value="RASCUNHO">Rascunho</option>
                 <option value="ATIVA">Enviada</option>
-                <option value="ENCERRADA">Encerrada</option>
+                <option value="CONCLUIDA">Concluída</option>
               </select>
             </>
           )}
