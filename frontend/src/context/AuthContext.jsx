@@ -16,6 +16,7 @@ export function AuthProvider({ children }) {
       }
       try {
         const dados = await authService.buscarUsuarioLogado();
+        conectarSocket();
         setUsuario(dados);
       } catch (e) {
         authService.logout();
@@ -26,14 +27,10 @@ export function AuthProvider({ children }) {
     carregar();
   }, []);
 
-  useEffect(() => {
-    if (usuario) conectarSocket();
-    else desconectarSocket();
-  }, [usuario]);
-
   async function entrar(email, senha) {
     await authService.login(email, senha);
     const dados = await authService.buscarUsuarioLogado();
+    conectarSocket();
     setUsuario(dados);
     return dados;
   }
@@ -41,6 +38,7 @@ export function AuthProvider({ children }) {
   async function entrarComToken(token) {
     authService.salvarToken(token);
     const dados = await authService.buscarUsuarioLogado();
+    conectarSocket();
     setUsuario(dados);
     return dados;
   }
