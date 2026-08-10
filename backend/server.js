@@ -24,6 +24,16 @@ const fornecedorRoutes = require('./routes/fornecedor.routes');
 const movimentacaoEstoqueRoutes = require('./routes/movimentacaoEstoque.routes');
 const loteRoutes = require('./routes/lote.routes');
 const estoqueDashboardRoutes = require('./routes/estoqueDashboard.routes');
+const categoriaFinanceiraRoutes = require('./routes/categoriaFinanceira.routes');
+const contaPagarRoutes = require('./routes/contaPagar.routes');
+const contaReceberRoutes = require('./routes/contaReceber.routes');
+const financeiroDashboardRoutes = require('./routes/financeiroDashboard.routes');
+
+// Express 4 nao repassa rejeicoes de handlers async pro error handler abaixo;
+// sem isso, uma rejeicao nao tratada em qualquer rota derruba o processo inteiro.
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled rejection:', err);
+});
 
 const app = express();
 
@@ -52,6 +62,10 @@ app.use('/api/fornecedores', fornecedorRoutes);
 app.use('/api/movimentacoes-estoque', movimentacaoEstoqueRoutes);
 app.use('/api/lotes', loteRoutes);
 app.use('/api/estoque', estoqueDashboardRoutes);
+app.use('/api/categorias-financeiras', categoriaFinanceiraRoutes);
+app.use('/api/contas-pagar', contaPagarRoutes);
+app.use('/api/contas-receber', contaReceberRoutes);
+app.use('/api/financeiro', financeiroDashboardRoutes);
 
 app.use((req, res) => res.status(404).json({ erro: 'Rota não encontrada.' }));
 

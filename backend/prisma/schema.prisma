@@ -35,6 +35,7 @@ enum FormaPagamento {
   CARTAO
   DINHEIRO
   VALE_ALIMENTACAO
+  BOLETO
 }
 
 enum StatusCaixa {
@@ -72,6 +73,18 @@ enum TipoMovimentacaoEstoque {
   COMPRA
   VENDA
   AJUSTE
+}
+
+enum TipoCategoriaFinanceira {
+  RECEITA
+  DESPESA
+}
+
+enum StatusConta {
+  PENDENTE
+  PAGO
+  VENCIDO
+  CANCELADO
 }
 
 enum TipoEmpresa {
@@ -142,6 +155,9 @@ model Empresa {
   contadorPedido ContadorPedido?
   fornecedores  Fornecedor[]
   movimentacoesEstoque MovimentacaoEstoque[]
+  categoriasFinanceiras CategoriaFinanceira[]
+  contasPagar   ContaPagar[]
+  contasReceber ContaReceber[]
 
   @@map("empresas")
 }
@@ -251,8 +267,71 @@ model Fornecedor {
   empresaId String
   empresa   Empresa @relation(fields: [empresaId], references: [id])
   lotes     Lote[]
+  contasPagar ContaPagar[]
 
   @@map("fornecedores")
+}
+
+model CategoriaFinanceira {
+  id       String                  @id @default(uuid())
+  nome     String
+  tipo     TipoCategoriaFinanceira
+  ativo    Boolean                 @default(true)
+  criadoEm DateTime                @default(now())
+
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+
+  contasPagar   ContaPagar[]
+  contasReceber ContaReceber[]
+
+  @@map("categorias_financeiras")
+}
+
+model ContaPagar {
+  id             String          @id @default(uuid())
+  descricao      String
+  valor          Decimal         @db.Decimal(10, 2)
+  vencimento     DateTime
+  status         StatusConta     @default(PENDENTE)
+  pagoEm         DateTime?
+  valorPago      Decimal?        @db.Decimal(10, 2)
+  formaPagamento FormaPagamento?
+  observacoes    String?         @db.Text
+  criadoEm       DateTime        @default(now())
+
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+
+  categoriaId String?
+  categoria   CategoriaFinanceira? @relation(fields: [categoriaId], references: [id])
+
+  fornecedorId String?
+  fornecedor   Fornecedor? @relation(fields: [fornecedorId], references: [id])
+
+  @@map("contas_pagar")
+}
+
+model ContaReceber {
+  id             String          @id @default(uuid())
+  descricao      String
+  valor          Decimal         @db.Decimal(10, 2)
+  vencimento     DateTime
+  status         StatusConta     @default(PENDENTE)
+  recebidoEm     DateTime?
+  valorRecebido  Decimal?        @db.Decimal(10, 2)
+  formaPagamento FormaPagamento?
+  clienteNome    String?
+  observacoes    String?         @db.Text
+  criadoEm       DateTime        @default(now())
+
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+
+  categoriaId String?
+  categoria   CategoriaFinanceira? @relation(fields: [categoriaId], references: [id])
+
+  @@map("contas_receber")
 }
 
 model Lote {
