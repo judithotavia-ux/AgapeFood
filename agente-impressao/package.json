@@ -2,10 +2,12 @@
   "name": "agapefood-agente-impressao",
   "version": "1.0.0",
   "description": "Agente local de impressao termica do AgapeFood - conecta as impressoras fisicas do estabelecimento ao painel AgapeFood via Socket.IO",
-  "main": "index.js",
+  "main": "electron/main.js",
   "scripts": {
     "start": "node index.js",
-    "testar-formatacao": "node testar-formatacao.js"
+    "testar-formatacao": "node testar-formatacao.js",
+    "electron": "electron .",
+    "dist": "electron-builder --win"
   },
   "license": "UNLICENSED",
   "type": "commonjs",
@@ -14,5 +16,33 @@
     "dotenv": "^17.4.2",
     "node-thermal-printer": "^4.6.0",
     "socket.io-client": "^4.8.3"
+  },
+  "devDependencies": {
+    "electron": "^43.3.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.agapefood.agenteimpressao",
+    "productName": "AgapeFood Agente de Impressão",
+    "files": [
+      "electron/**/*",
+      "core/**/*",
+      "renderizador.js",
+      "assets/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "directories": { "output": "release" },
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "AgapeFood Agente de Impressão"
+    }
   }
 }

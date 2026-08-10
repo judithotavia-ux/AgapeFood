@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ágape Food — Agente de Impressão</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <div class="marca">
+      <img src="../../assets/icon.png" alt="" />
+      <div>
+        <h1>Ágape Food</h1>
+        <div class="subtitulo">Agente de Impressão</div>
+      </div>
+    </div>
+    <div id="status-badge" class="badge badge-offline">🔴 Desconectado</div>
+  </header>
+
+  <nav id="abas">
+    <button data-aba="status" class="ativo">Status</button>
+    <button data-aba="impressoras">Impressoras</button>
+    <button data-aba="fila">Fila</button>
+    <button data-aba="config">Configurações</button>
+  </nav>
+
+  <main>
+    <section id="aba-status" class="aba ativo">
+      <div class="cartao">
+        <div class="linha"><span>Usuário</span><strong id="status-usuario">—</strong></div>
+        <div class="linha"><span>Conexão</span><strong id="status-conexao">—</strong></div>
+        <div class="linha">
+          <span>Impressão</span>
+          <button id="btn-pausar-retomar" class="btn-secundario">Pausar</button>
+        </div>
+      </div>
+      <h3>Atividade recente</h3>
+      <div id="lista-logs" class="lista-logs"></div>
+    </section>
+
+    <section id="aba-impressoras" class="aba">
+      <p class="ajuda">As impressoras são cadastradas no painel web AgapeFood (Impressoras). Aqui você só confere o status e testa.</p>
+      <div id="lista-impressoras" class="lista-cartoes"></div>
+    </section>
+
+    <section id="aba-fila" class="aba">
+      <div id="lista-fila" class="lista-cartoes"></div>
+    </section>
+
+    <section id="aba-config" class="aba">
+      <form id="form-config">
+        <label>URL do backend</label>
+        <input id="cfg-backend" type="text" placeholder="https://seu-backend.up.railway.app/api" />
+
+        <label>E-mail</label>
+        <input id="cfg-email" type="email" placeholder="seu-email@exemplo.com" />
+
+        <label>Senha</label>
+        <input id="cfg-senha" type="password" placeholder="Sua senha do AgapeFood" />
+
+        <label class="checkbox">
+          <input id="cfg-iniciar-windows" type="checkbox" />
+          Iniciar automaticamente com o Windows
+        </label>
+
+        <div id="config-erro" class="erro"></div>
+        <button type="submit" class="btn-primario">Salvar e conectar</button>
+      </form>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
