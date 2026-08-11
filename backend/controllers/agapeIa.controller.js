@@ -1,6 +1,7 @@
 const prisma = require('../prisma/client');
 const { processarMensagem, ErroAgapeIA } = require('../services/agapeIa.service');
 const { verificarLimiteIA } = require('../utils/limiteIa');
+const { usaChavePropria } = require('../services/anthropicCliente.service');
 
 // Estimativa usada para "Tempo Economizado" e "Economia Gerada" no dashboard — não são valores
 // medidos, são uma suposição documentada (minutos que uma interação levaria se feita manualmente
@@ -15,7 +16,10 @@ async function conversar(req, res) {
   const { texto, conversaId } = req.body || {};
   if (!texto || !texto.trim()) return res.status(400).json({ erro: 'Escreva uma mensagem.' });
 
-  const statusLimite = await verificarLimiteIA(req.usuario.empresaId);
+  // Quem traz a propria chave paga direto pra Anthropic - o limite mensal existe pra proteger o
+  // uso da chave da AgapeFood, entao nao se aplica nesse caso.
+  const temChavePropria = await usaChavePropria(req.usuario.empresaId);
+  const statusLimite = temChavePropria ? { permitido: true } : await verificarLimiteIA(req.usuario.empresaId);
   if (!statusLimite.permitido) {
     return res.status(429).json({
       erro: `Limite mensal de ${statusLimite.limite} mensagens da Ágape IA atingido. Ele é renovado no início do próximo mês.`,
@@ -154,11 +158,15 @@ async function atualizarTarefa(req, res) {
 }
 
 async function uso(req, res) {
+  const temChavePropria = await usaChavePropria(req.usuario.empresaId);
+  if (temChavePropria) return res.json({ limite: null, usadas: null, restantes: null, chavePropria: true });
+
   const status = await verificarLimiteIA(req.usuario.empresaId);
   res.json({
     limite: status.limite,
     usadas: status.usadas,
-    restantes: status.limite === null ? null : Math.max(0, status.limite - status.usadas)
+    restantes: status.limite === null ? null : Math.max(0, status.limite - status.usadas),
+    chavePropria: false
   });
 }
 

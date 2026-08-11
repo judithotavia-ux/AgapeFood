@@ -21,7 +21,7 @@ async function gerarTexto(req, res) {
 
   const client = await obterClienteAnthropic(req.usuario.empresaId);
   if (!client) {
-    return res.status(503).json({ erro: 'Configure sua chave da Anthropic para usar a geração por IA. Vá em Ágape IA → Configurar chave.' });
+    return res.status(503).json({ erro: 'A geração por IA ainda não foi configurada nesta instalação. Fale com o suporte AgapeFood.' });
   }
 
   const empresa = await prisma.empresa.findUnique({ where: { id: req.usuario.empresaId }, select: { nome: true } });

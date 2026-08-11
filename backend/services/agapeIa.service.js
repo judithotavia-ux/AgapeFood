@@ -270,7 +270,7 @@ async function executarFerramenta(nome, input, ctx) {
 async function processarMensagem({ empresaId, usuario, conversaId, texto }) {
   const client = await obterClienteAnthropic(empresaId);
   if (!client) {
-    throw new ErroAgapeIA(503, 'Configure sua chave da Anthropic para ativar a Ágape IA. Vá em Ágape IA → Configurar chave.');
+    throw new ErroAgapeIA(503, 'A Ágape IA ainda não foi configurada nesta instalação. Fale com o suporte AgapeFood.');
   }
 
   const anteriores = await prisma.mensagemIA.findMany({

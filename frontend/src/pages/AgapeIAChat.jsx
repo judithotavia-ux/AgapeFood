@@ -223,14 +223,14 @@ export default function AgapeIAChat() {
         </aside>
 
         <div className="card" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden' }}>
-          {configIA && !configIA.configurada && (
+          {uso?.limite !== null && uso?.limite !== undefined && uso.restantes === 0 && (
             <div style={{
               margin: '16px 22px 0', padding: '12px 16px', borderRadius: 10,
-              background: 'rgba(212,175,55,.08)', border: '1px solid var(--borda)',
+              background: 'rgba(224,102,102,.08)', border: '1px solid var(--erro)',
               fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12
             }}>
-              <span>⚠️ Configure sua chave da Anthropic para a Ágape IA funcionar.</span>
-              <button className="btn" style={{ padding: '7px 14px', fontSize: 12.5, flexShrink: 0 }} onClick={abrirModalConfig}>Configurar agora</button>
+              <span>⚠️ Limite mensal de {uso.limite} mensagens atingido. Traga sua própria chave da Anthropic pra uso ilimitado.</span>
+              <button className="btn" style={{ padding: '7px 14px', fontSize: 12.5, flexShrink: 0 }} onClick={abrirModalConfig}>Configurar chave</button>
             </div>
           )}
 
@@ -286,7 +286,7 @@ export default function AgapeIAChat() {
 
       <Modal titulo="Configurar chave da Ágape IA" aberto={modalConfig} onFechar={() => setModalConfig(false)}>
         <p style={{ fontSize: 13, color: 'var(--texto2)', marginBottom: 16 }}>
-          A Ágape IA usa a API da Anthropic (mesma empresa da Claude). Cada empresa configura e paga sua própria chave — o uso não passa pelo AgapeFood.
+          A Ágape IA já vem pronta pra usar no plano Completo, com um limite de mensagens por mês. Isso aqui é opcional: se você quiser uso ilimitado, pode trazer sua própria chave da Anthropic — nesse caso, o uso e o pagamento passam a ser diretamente com a Anthropic, fora do limite mensal.
         </p>
         <ol style={{ fontSize: 12.5, color: 'var(--texto2)', paddingLeft: 18, marginBottom: 18, lineHeight: 1.8 }}>
           <li>Acesse <strong>console.anthropic.com</strong> e crie uma conta</li>
