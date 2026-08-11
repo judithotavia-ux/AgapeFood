@@ -1,6 +1,7 @@
 const prisma = require('../prisma/client');
 const { emitirParaEmpresa } = require('../realtime/socket');
 const { criarJobsParaPedido, criarJobCancelamento } = require('../services/impressao.service');
+const { normalizarTelefone } = require('../utils/telefone');
 
 const PROXIMO_STATUS = {
   RECEBIDO: ['PREPARANDO', 'CANCELADO'],
@@ -128,10 +129,11 @@ async function criarPedidoCore(empresaId, garcomNome, dados) {
 
   let clienteId = null;
   if (clienteTelefone && clienteTelefone.trim()) {
+    const telefoneNormalizado = normalizarTelefone(clienteTelefone);
     const cliente = await prisma.cliente.upsert({
-      where: { empresaId_telefone: { empresaId, telefone: clienteTelefone.trim() } },
+      where: { empresaId_telefone: { empresaId, telefone: telefoneNormalizado } },
       update: { nome: clienteNome || undefined },
-      create: { empresaId, telefone: clienteTelefone.trim(), nome: clienteNome || null }
+      create: { empresaId, telefone: telefoneNormalizado, nome: clienteNome || null }
     });
     clienteId = cliente.id;
   }

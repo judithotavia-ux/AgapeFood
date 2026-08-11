@@ -41,6 +41,8 @@ const impressaoDashboardRoutes = require('./routes/impressaoDashboard.routes');
 const assinaturaRoutes = require('./routes/assinatura.routes');
 const webhookAsaasRoutes = require('./routes/webhookAsaas.routes');
 const agapeIaRoutes = require('./routes/agapeIa.routes');
+const clienteAuthRoutes = require('./routes/clienteAuth.routes');
+const clientePortalRoutes = require('./routes/clientePortal.routes');
 
 function logErroEstruturado(origem, err, req) {
   console.error(JSON.stringify({
@@ -130,6 +132,8 @@ app.use('/api/impressao', impressaoDashboardRoutes);
 app.use('/api/assinatura', assinaturaRoutes);
 app.use('/api/webhooks/asaas', webhookAsaasRoutes);
 app.use('/api/agape-ia', agapeIaRoutes);
+app.use('/api/cliente-auth', clienteAuthRoutes);
+app.use('/api/cliente-portal', clientePortalRoutes);
 
 app.use((req, res) => res.status(404).json({ erro: 'Rota não encontrada.' }));
 

@@ -24,3 +24,4 @@ export const removerAdicional = (produtoId, adicionalId) => api.delete(`/produto
 
 // Público
 export const buscarCardapioPublico = (slug) => api.get(`/publico/cardapio/${slug}`).then((r) => r.data);
+export const criarPedidoPublico = (slug, dados) => api.post(`/publico/cardapio/${slug}/pedido`, dados).then((r) => r.data);

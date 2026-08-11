@@ -35,4 +35,30 @@ async function enviarEmailResetSenha({ destinatario, nome, link }) {
   });
 }
 
-module.exports = { enviarEmailResetSenha, configurado };
+async function enviarEmailOtpCliente({ destinatario, nome, codigo, empresaNome }) {
+  const client = clienteResend();
+  if (!client) throw new Error('RESEND_API_KEY não configurada.');
+
+  const remetente = process.env.RESEND_FROM_EMAIL || 'AgapeFood <onboarding@resend.dev>';
+
+  await client.emails.send({
+    from: remetente,
+    to: destinatario,
+    subject: `${codigo} — seu código de acesso (${empresaNome || 'AgapeFood'})`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; color: #211D14;">
+        <h2 style="color: #96691C;">Seu código de acesso</h2>
+        <p>Olá${nome ? ', ' + nome : ''}.</p>
+        <p>Use o código abaixo para entrar na sua conta em <strong>${empresaNome || 'AgapeFood'}</strong>:</p>
+        <p style="margin: 28px 0; text-align: center;">
+          <span style="background: #D4AF37; color: #16130a; padding: 14px 28px; border-radius: 8px; font-weight: bold; font-size: 28px; letter-spacing: 6px; display: inline-block;">
+            ${codigo}
+          </span>
+        </p>
+        <p style="font-size: 13px; color: #6B6354;">Esse código expira em 10 minutos. Se você não pediu esse acesso, pode ignorar este e-mail.</p>
+      </div>
+    `
+  });
+}
+
+module.exports = { enviarEmailResetSenha, enviarEmailOtpCliente, configurado };
