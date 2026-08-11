@@ -3,6 +3,7 @@ import AdminLayout from '../layouts/AdminLayout';
 import Modal from '../components/Modal';
 import * as perfilService from '../services/perfilPersonalizadoService';
 import * as permissaoService from '../services/permissaoService';
+import * as temporariaService from '../services/permissaoTemporariaService';
 
 const PAPEL_LABEL = { SUPER_ADMIN: 'Super Admin', ADMIN: 'Admin', GERENTE: 'Gerente', FUNCIONARIO: 'Funcionário', GARCOM: 'Garçom' };
 
@@ -13,6 +14,110 @@ function agruparPorModulo(catalogo) {
     grupos.get(p.modulo).push(p);
   }
   return [...grupos.entries()];
+}
+
+function fmtDataHora(iso) {
+  return new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+}
+
+function SecaoTemporarias({ usuarios, catalogo }) {
+  const [concessoes, setConcessoes] = useState([]);
+  const [carregando, setCarregando] = useState(true);
+  const [usuarioId, setUsuarioId] = useState('');
+  const [permissaoChave, setPermissaoChave] = useState('');
+  const [validaAte, setValidaAte] = useState('');
+  const [motivo, setMotivo] = useState('');
+  const [erro, setErro] = useState('');
+  const [enviando, setEnviando] = useState(false);
+
+  async function carregar() {
+    setCarregando(true);
+    const dados = await temporariaService.listarPermissoesTemporarias();
+    setConcessoes(dados);
+    setCarregando(false);
+  }
+
+  useEffect(() => { carregar(); }, []);
+
+  async function conceder(e) {
+    e.preventDefault();
+    setErro(''); setEnviando(true);
+    try {
+      await temporariaService.concederPermissaoTemporaria({ usuarioId, permissaoChave, validaAte, motivo: motivo || undefined });
+      setUsuarioId(''); setPermissaoChave(''); setValidaAte(''); setMotivo('');
+      carregar();
+    } catch (e) {
+      setErro(e.response?.data?.erro || 'Não foi possível conceder a permissão.');
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  async function revogar(id) {
+    if (!confirm('Revogar essa permissão agora?')) return;
+    await temporariaService.revogarPermissaoTemporaria(id);
+    carregar();
+  }
+
+  function estaAtiva(c) {
+    return !c.revogadaEm && new Date(c.validaAte) > new Date();
+  }
+
+  return (
+    <div className="card" style={{ marginTop: 20 }}>
+      <h3 style={{ fontSize: 15, marginBottom: 4 }}>Permissões temporárias</h3>
+      <p style={{ fontSize: 12.5, color: 'var(--texto2)', marginBottom: 14 }}>Dá uma permissão extra pra alguém até uma data/hora específica, sem precisar criar um perfil novo.</p>
+
+      <form onSubmit={conceder} style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: 16 }}>
+        <div style={{ minWidth: 180 }}>
+          <label>Pessoa</label>
+          <select value={usuarioId} onChange={(e) => setUsuarioId(e.target.value)} required>
+            <option value="">Selecione…</option>
+            {usuarios.map((u) => <option key={u.id} value={u.id}>{u.nome}</option>)}
+          </select>
+        </div>
+        <div style={{ minWidth: 220 }}>
+          <label>Permissão</label>
+          <select value={permissaoChave} onChange={(e) => setPermissaoChave(e.target.value)} required>
+            <option value="">Selecione…</option>
+            {catalogo.map((p) => <option key={p.chave} value={p.chave}>{p.descricao}</option>)}
+          </select>
+        </div>
+        <div>
+          <label>Válida até</label>
+          <input type="datetime-local" value={validaAte} onChange={(e) => setValidaAte(e.target.value)} required />
+        </div>
+        <div style={{ minWidth: 160 }}>
+          <label>Motivo (opcional)</label>
+          <input type="text" value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="Ex: cobrindo o caixa hoje" />
+        </div>
+        <button type="submit" className="btn" disabled={enviando}>{enviando ? 'Concedendo…' : 'Conceder'}</button>
+      </form>
+      {erro && <div className="erro-msg" style={{ marginBottom: 14 }}>{erro}</div>}
+
+      {carregando ? <p style={{ color: 'var(--texto2)' }}>Carregando…</p> : (
+        concessoes.length === 0 ? (
+          <p style={{ color: 'var(--texto2)', fontSize: 12.5 }}>Nenhuma concessão ainda.</p>
+        ) : (
+          concessoes.map((c) => (
+            <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid var(--borda)', fontSize: 12.5 }}>
+              <div>
+                <strong>{c.usuario.nome}</strong> — {c.permissao.descricao}
+                <div style={{ color: 'var(--texto2)', fontSize: 11.5 }}>
+                  até {fmtDataHora(c.validaAte)} · concedido por {c.concedidaPor.nome}{c.motivo ? ` · ${c.motivo}` : ''}
+                </div>
+              </div>
+              {estaAtiva(c) ? (
+                <button style={{ background: 'none', border: 'none', color: 'var(--erro)', fontSize: 12, cursor: 'pointer' }} onClick={() => revogar(c.id)}>Revogar</button>
+              ) : (
+                <span style={{ color: 'var(--texto2)', fontSize: 11 }}>{c.revogadaEm ? 'Revogada' : 'Expirada'}</span>
+              )}
+            </div>
+          ))
+        )
+      )}
+    </div>
+  );
 }
 
 export default function PerfisPersonalizados() {
@@ -130,6 +235,8 @@ export default function PerfisPersonalizados() {
               </div>
             ))}
           </div>
+
+          <SecaoTemporarias usuarios={usuarios} catalogo={catalogo} />
         </>
       )}
 

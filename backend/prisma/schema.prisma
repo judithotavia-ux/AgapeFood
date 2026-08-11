@@ -287,6 +287,7 @@ model Empresa {
   limitesAprovacao      LimiteAprovacao[]
   aprovacoesGerenciais  AprovacaoGerencial[]
   perfisPersonalizados  PerfilPersonalizado[]
+  permissoesTemporarias PermissaoTemporaria[]
 
   @@map("empresas")
 }
@@ -399,6 +400,8 @@ model Usuario {
   configuracoesGorjetaAlteradas ConfiguracaoGorjeta[] @relation("ConfiguracaoGorjetaAlteradaPor")
   aprovacoesSolicitadas AprovacaoGerencial[] @relation("AprovacaoSolicitante")
   aprovacoesConcedidas  AprovacaoGerencial[] @relation("AprovacaoAprovador")
+  permissoesTemporariasRecebidas PermissaoTemporaria[] @relation("PermissaoTemporariaUsuario")
+  permissoesTemporariasConcedidas PermissaoTemporaria[] @relation("PermissaoTemporariaConcedidaPor")
 
   @@map("usuarios")
 }
@@ -1227,9 +1230,36 @@ model Permissao {
 
   perfisPadrao       PerfilPermissaoPadrao[]
   perfisPersonalizados PerfilPersonalizadoPermissao[]
+  concessoesTemporarias PermissaoTemporaria[]
 
   @@index([modulo])
   @@map("permissoes")
+}
+
+// Concede uma permissao extra, pontual, a um usuario especifico ate uma data/hora - sem precisar
+// criar um perfil personalizado pra isso. Efetiva enquanto revogadaEm for nulo e validaAte for
+// no futuro; nao criamos linha por dia/turno, so uma janela de validade simples.
+model PermissaoTemporaria {
+  id         String    @id @default(uuid())
+  validaAte  DateTime
+  motivo     String?
+  criadoEm   DateTime  @default(now())
+  revogadaEm DateTime?
+
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+
+  usuarioId String
+  usuario   Usuario @relation("PermissaoTemporariaUsuario", fields: [usuarioId], references: [id])
+
+  permissaoId String
+  permissao   Permissao @relation(fields: [permissaoId], references: [id])
+
+  concedidaPorId String
+  concedidaPor   Usuario @relation("PermissaoTemporariaConcedidaPor", fields: [concedidaPorId], references: [id])
+
+  @@index([usuarioId, revogadaEm, validaAte])
+  @@map("permissoes_temporarias")
 }
 
 // Perfil criado pela propria empresa, com um recorte de permissoes escolhido a dedo. Quando um

@@ -21,12 +21,27 @@ async function permissoesDoPerfilPersonalizado(perfilId) {
   return new Set(vinculos.map((v) => v.permissao.chave));
 }
 
+async function chavesTemporariasAtivas(usuarioId) {
+  const concessoes = await prisma.permissaoTemporaria.findMany({
+    where: { usuarioId, revogadaEm: null, validaAte: { gt: new Date() } },
+    select: { permissao: { select: { chave: true } } }
+  });
+  return concessoes.map((c) => c.permissao.chave);
+}
+
 // Se o usuario tem um perfil personalizado atribuido, as permissoes vem dele - o papel
 // (PapelUsuario) continua valendo pra outras regras de negocio, so a permissao muda de fonte.
+// Por cima disso, qualquer concessao temporaria ainda dentro da validade some ao conjunto.
 async function permissoesEfetivas(usuario) {
   if (!usuario?.papel) return new Set();
-  if (usuario.perfilPersonalizadoId) return permissoesDoPerfilPersonalizado(usuario.perfilPersonalizadoId);
-  return permissoesDoPapel(usuario.papel);
+  const base = usuario.perfilPersonalizadoId
+    ? await permissoesDoPerfilPersonalizado(usuario.perfilPersonalizadoId)
+    : await permissoesDoPapel(usuario.papel);
+
+  if (usuario.id) {
+    for (const chave of await chavesTemporariasAtivas(usuario.id)) base.add(chave);
+  }
+  return base;
 }
 
 async function temPermissao(usuario, chave) {
