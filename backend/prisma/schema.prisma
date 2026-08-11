@@ -1201,3 +1201,32 @@ model DistribuicaoGorjeta {
 
   @@map("distribuicoes_gorjeta")
 }
+
+// Catalogo global de permissoes do sistema (mesmo catalogo pra todas as empresas).
+// Convencao de chave: "modulo.acao", ex: "financeiro.visualizar".
+model Permissao {
+  id        String   @id @default(uuid())
+  chave     String   @unique
+  modulo    String
+  acao      String
+  descricao String
+  criadoEm  DateTime @default(now())
+
+  perfisPadrao PerfilPermissaoPadrao[]
+
+  @@index([modulo])
+  @@map("permissoes")
+}
+
+// Permissoes padrao de cada papel base (SUPER_ADMIN, ADMIN, GERENTE, FUNCIONARIO, GARCOM).
+// Serve de ponto de partida antes de existirem perfis personalizados por empresa.
+model PerfilPermissaoPadrao {
+  id          String    @id @default(uuid())
+  papel       PapelUsuario
+  permissaoId String
+  permissao   Permissao @relation(fields: [permissaoId], references: [id], onDelete: Cascade)
+
+  @@unique([papel, permissaoId])
+  @@index([papel])
+  @@map("perfis_permissao_padrao")
+}
