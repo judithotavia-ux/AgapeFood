@@ -252,6 +252,7 @@ export default function CardapioPublico() {
         cliente={cliente}
         enderecosSalvos={enderecosSalvos}
         onFinalizar={finalizarPedido}
+        gorjeta={dados.gorjeta}
         enviando={enviandoPedido}
         erro={erroPedido}
         cor={cor}
@@ -278,7 +279,12 @@ export default function CardapioPublico() {
           <div onClick={(e) => e.stopPropagation()} style={{ background: '#151515', border: `1px solid ${cor}44`, borderRadius: 16, padding: 32, textAlign: 'center', maxWidth: 360 }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}>✅</div>
             <h2 style={{ fontFamily: 'Georgia, serif', color: cor, fontSize: 22, marginBottom: 8, fontWeight: 400 }}>Pedido enviado!</h2>
-            <p style={{ fontSize: 13.5, color: '#b8ac8e', marginBottom: 22 }}>Seu pedido #{pedidoConfirmado.numero} foi recebido e já está sendo preparado.</p>
+            <p style={{ fontSize: 13.5, color: '#b8ac8e', marginBottom: pedidoConfirmado.gorjetaValor > 0 ? 8 : 22 }}>Seu pedido #{pedidoConfirmado.numero} foi recebido e já está sendo preparado.</p>
+            {pedidoConfirmado.gorjetaValor > 0 && (
+              <p style={{ fontSize: 12, color: '#b8ac8e', marginBottom: 22 }}>
+                Consumo {fmtPreco(pedidoConfirmado.valorTotal)} + gorjeta {fmtPreco(pedidoConfirmado.gorjetaValor)} = <strong style={{ color: cor }}>{fmtPreco(pedidoConfirmado.totalComGorjeta)}</strong>
+              </p>
+            )}
             <button onClick={() => setPedidoConfirmado(null)} style={{ width: '100%', padding: '12px', borderRadius: 10, border: 'none', background: cor, color: '#16130a', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
               Continuar
             </button>

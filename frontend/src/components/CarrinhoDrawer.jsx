@@ -8,7 +8,7 @@ function fmtPreco(v) {
 const campoStyle = { width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #333', background: '#0a0a0a', color: '#f2ead9', fontSize: 13.5, marginBottom: 10 };
 const labelStyle = { fontSize: 11, textTransform: 'uppercase', letterSpacing: '.04em', color: '#b8ac8e', display: 'block', marginBottom: 6 };
 
-export default function CarrinhoDrawer({ aberto, onFechar, itens, onRemover, onAtualizarQtd, mesa, cliente, enderecosSalvos, onFinalizar, enviando, erro, cor }) {
+export default function CarrinhoDrawer({ aberto, onFechar, itens, onRemover, onAtualizarQtd, mesa, cliente, enderecosSalvos, gorjeta, onFinalizar, enviando, erro, cor }) {
   const [tipo, setTipo] = useState(mesa ? 'MESA' : 'RETIRADA');
   const [nome, setNome] = useState('');
   const [telefone, setTelefone] = useState('');
@@ -17,6 +17,7 @@ export default function CarrinhoDrawer({ aberto, onFechar, itens, onRemover, onA
   const [formaPagamento, setFormaPagamento] = useState('PIX');
   const [cupomCodigo, setCupomCodigo] = useState('');
   const [observacoes, setObservacoes] = useState('');
+  const [percentualGorjeta, setPercentualGorjeta] = useState(gorjeta?.ativa ? gorjeta.percentualPadrao : 0);
 
   useEffect(() => {
     if (cliente) { setNome(cliente.nome || ''); setTelefone(cliente.telefone || ''); }
@@ -27,6 +28,8 @@ export default function CarrinhoDrawer({ aberto, onFechar, itens, onRemover, onA
   }, [mesa]);
 
   const subtotal = itens.reduce((s, i) => s + i.precoUnitario * i.quantidade, 0);
+  const valorGorjeta = gorjeta?.ativa ? Math.round(subtotal * (percentualGorjeta / 100) * 100) / 100 : 0;
+  const totalComGorjeta = subtotal + valorGorjeta;
 
   function submeter(e) {
     e.preventDefault();
@@ -46,7 +49,9 @@ export default function CarrinhoDrawer({ aberto, onFechar, itens, onRemover, onA
       mesaNumero: tipo === 'MESA' ? mesa : undefined,
       formaPagamento,
       cupomCodigo: cupomCodigo || undefined,
-      observacoes: observacoes || undefined
+      observacoes: observacoes || undefined,
+      gorjetaPercentual: gorjeta?.ativa ? percentualGorjeta : undefined,
+      semGorjeta: gorjeta?.ativa ? percentualGorjeta === 0 : undefined
     });
   }
 
@@ -77,10 +82,40 @@ export default function CarrinhoDrawer({ aberto, onFechar, itens, onRemover, onA
             ))}
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 700, marginBottom: 18 }}>
-            <span>Subtotal</span>
-            <span style={{ color: cor }}>{fmtPreco(subtotal)}</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, marginBottom: gorjeta?.ativa ? 4 : 18 }}>
+            <span style={{ color: gorjeta?.ativa ? '#b8ac8e' : undefined, fontWeight: gorjeta?.ativa ? 400 : 700 }}>Subtotal</span>
+            <span style={{ color: gorjeta?.ativa ? '#f2ead9' : cor, fontWeight: gorjeta?.ativa ? 400 : 700 }}>{fmtPreco(subtotal)}</span>
           </div>
+
+          {gorjeta?.ativa && (
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, marginBottom: 8 }}>
+                <span style={{ color: '#b8ac8e' }}>Gorjeta</span>
+                <span>{fmtPreco(valorGorjeta)}</span>
+              </div>
+              {gorjeta.permitirClienteEscolher && (
+                <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
+                  {[...gorjeta.opcoesPercentual, 0].map((p) => (
+                    <button
+                      key={p} type="button" onClick={() => setPercentualGorjeta(p)}
+                      style={{
+                        padding: '7px 12px', borderRadius: 20, fontSize: 12.5, cursor: 'pointer',
+                        border: `1px solid ${percentualGorjeta === p ? cor : '#333'}`,
+                        background: percentualGorjeta === p ? `${cor}22` : 'transparent',
+                        color: percentualGorjeta === p ? cor : '#b8ac8e'
+                      }}
+                    >
+                      {p === 0 ? 'Sem gorjeta' : `${p}%`}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16, fontWeight: 700, paddingTop: 10, borderTop: '1px solid #2a2a2a' }}>
+                <span>Total</span>
+                <span style={{ color: cor }}>{fmtPreco(totalComGorjeta)}</span>
+              </div>
+            </div>
+          )}
 
           {!mesa && (
             <>
@@ -137,7 +172,7 @@ export default function CarrinhoDrawer({ aberto, onFechar, itens, onRemover, onA
           {erro && <div style={{ color: '#e06666', fontSize: 12.5, marginBottom: 10 }}>{erro}</div>}
 
           <button type="submit" disabled={enviando} style={{ width: '100%', padding: '14px', borderRadius: 10, border: 'none', background: cor, color: '#16130a', fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>
-            {enviando ? 'Enviando…' : `Finalizar pedido — ${fmtPreco(subtotal)}`}
+            {enviando ? 'Enviando…' : `Finalizar pedido — ${fmtPreco(totalComGorjeta)}`}
           </button>
         </form>
       )}

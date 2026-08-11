@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import AdminLayout from '../layouts/AdminLayout';
 import Modal from '../components/Modal';
 import * as garcomService from '../services/garcomService';
+import * as configuracaoGorjetaService from '../services/configuracaoGorjetaService';
 
 const STATUS_LABEL = { ATIVO: 'Ativo', INATIVO: 'Inativo', FERIAS: 'Férias', AFASTADO: 'Afastado' };
 const STATUS_COR = { ATIVO: 'var(--sucesso)', INATIVO: 'var(--texto2)', FERIAS: '#5aa9e6', AFASTADO: '#e0a020' };
@@ -24,6 +25,11 @@ export default function EquipeGarcons() {
   const [novaSenha, setNovaSenha] = useState('');
   const [erroSenha, setErroSenha] = useState('');
 
+  const [modalGorjeta, setModalGorjeta] = useState(false);
+  const [configGorjeta, setConfigGorjeta] = useState(null);
+  const [salvandoGorjeta, setSalvandoGorjeta] = useState(false);
+  const [erroGorjeta, setErroGorjeta] = useState('');
+
   async function carregar() {
     setCarregando(true);
     const lista = await garcomService.listarGarcons();
@@ -32,6 +38,38 @@ export default function EquipeGarcons() {
   }
 
   useEffect(() => { carregar(); }, []);
+
+  async function abrirConfigGorjeta() {
+    setErroGorjeta('');
+    const config = await configuracaoGorjetaService.obterConfiguracaoGorjeta();
+    setConfigGorjeta({ ...config, opcoesPercentualTexto: config.opcoesPercentual.join(', ') });
+    setModalGorjeta(true);
+  }
+
+  async function salvarConfigGorjeta(e) {
+    e.preventDefault();
+    setSalvandoGorjeta(true);
+    setErroGorjeta('');
+    try {
+      const opcoes = configGorjeta.opcoesPercentualTexto
+        .split(',')
+        .map((v) => Number(v.trim()))
+        .filter((n) => !isNaN(n));
+      const atualizado = await configuracaoGorjetaService.atualizarConfiguracaoGorjeta({
+        ativa: configGorjeta.ativa,
+        percentualPadrao: configGorjeta.percentualPadrao,
+        permitirClienteEscolher: configGorjeta.permitirClienteEscolher,
+        permitirValorFixo: configGorjeta.permitirValorFixo,
+        opcoesPercentual: opcoes
+      });
+      setConfigGorjeta({ ...atualizado, opcoesPercentualTexto: atualizado.opcoesPercentual.join(', ') });
+      setModalGorjeta(false);
+    } catch (err) {
+      setErroGorjeta(err.response?.data?.erro || 'Não foi possível salvar.');
+    } finally {
+      setSalvandoGorjeta(false);
+    }
+  }
 
   function abrirNovo() {
     setEditandoId(null);
@@ -99,7 +137,10 @@ export default function EquipeGarcons() {
     <AdminLayout titulo="Equipe de Garçons">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <p style={{ color: 'var(--texto2)', fontSize: 13.5, margin: 0 }}>Cadastro da equipe que atende mesas — cada garçom tem seu próprio login.</p>
-        <button className="btn" onClick={abrirNovo}>+ Novo Garçom</button>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button className="btn-outline" onClick={abrirConfigGorjeta}>⚙️ Configurar Gorjetas</button>
+          <button className="btn" onClick={abrirNovo}>+ Novo Garçom</button>
+        </div>
       </div>
 
       {carregando ? (
@@ -224,6 +265,49 @@ export default function EquipeGarcons() {
           {erroSenha && <div className="erro-msg">{erroSenha}</div>}
           <button type="submit" className="btn" style={{ width: '100%', marginTop: 16 }}>Redefinir</button>
         </form>
+      </Modal>
+
+      <Modal titulo="Configurar Gorjetas" aberto={modalGorjeta} onFechar={() => setModalGorjeta(false)} largura={460}>
+        {!configGorjeta ? (
+          <div style={{ color: 'var(--texto2)' }}>Carregando…</div>
+        ) : (
+          <form onSubmit={salvarConfigGorjeta}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, textTransform: 'none', fontSize: 14, color: 'var(--texto)', marginBottom: 16, cursor: 'pointer' }}>
+              <input type="checkbox" style={{ width: 'auto' }} checked={configGorjeta.ativa} onChange={(e) => setConfigGorjeta({ ...configGorjeta, ativa: e.target.checked })} />
+              Ativar gorjeta no cardápio digital e nos pedidos de mesa
+            </label>
+
+            {configGorjeta.ativa && (
+              <>
+                <label>Percentual padrão (%)</label>
+                <input type="number" min="0" max="100" step="0.5" value={configGorjeta.percentualPadrao} onChange={(e) => setConfigGorjeta({ ...configGorjeta, percentualPadrao: e.target.value })} style={{ marginBottom: 14 }} />
+
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, textTransform: 'none', fontSize: 13.5, color: 'var(--texto)', marginBottom: 14, cursor: 'pointer' }}>
+                  <input type="checkbox" style={{ width: 'auto' }} checked={configGorjeta.permitirClienteEscolher} onChange={(e) => setConfigGorjeta({ ...configGorjeta, permitirClienteEscolher: e.target.checked })} />
+                  Permitir que o cliente escolha o percentual
+                </label>
+
+                {configGorjeta.permitirClienteEscolher && (
+                  <>
+                    <label>Opções de percentual oferecidas (separadas por vírgula)</label>
+                    <input value={configGorjeta.opcoesPercentualTexto} onChange={(e) => setConfigGorjeta({ ...configGorjeta, opcoesPercentualTexto: e.target.value })} placeholder="5, 10, 12, 15" style={{ marginBottom: 14 }} />
+                  </>
+                )}
+
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, textTransform: 'none', fontSize: 13.5, color: 'var(--texto)', marginBottom: 6, cursor: 'pointer' }}>
+                  <input type="checkbox" style={{ width: 'auto' }} checked={configGorjeta.permitirValorFixo} onChange={(e) => setConfigGorjeta({ ...configGorjeta, permitirValorFixo: e.target.checked })} />
+                  Permitir gorjeta em valor fixo (em vez de percentual)
+                </label>
+              </>
+            )}
+
+            {erroGorjeta && <div className="erro-msg">{erroGorjeta}</div>}
+
+            <button type="submit" className="btn" style={{ width: '100%', marginTop: 18 }} disabled={salvandoGorjeta}>
+              {salvandoGorjeta ? 'Salvando…' : 'Salvar'}
+            </button>
+          </form>
+        )}
       </Modal>
     </AdminLayout>
   );

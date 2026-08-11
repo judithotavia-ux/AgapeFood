@@ -59,7 +59,8 @@ class ErroPedido extends Error {
 async function criarPedidoCore(empresaId, garcom, dados) {
   const {
     tipo, itens, clienteNome, clienteTelefone, clienteEndereco, formaPagamento, taxaEntrega, observacoes, mesaId,
-    canalEntrega, motoboyId, taxaMotoboy, cupomCodigo, origem
+    canalEntrega, motoboyId, taxaMotoboy, cupomCodigo, origem, gorjetaPercentual: percentualEscolhidoCliente,
+    gorjetaValorFixo, semGorjeta
   } = dados || {};
 
   if (!tipo) throw new ErroPedido(400, 'Informe o tipo do pedido.');
@@ -127,6 +128,23 @@ async function criarPedidoCore(empresaId, garcom, dados) {
     valorTotal -= valorDesconto;
   }
 
+  const configGorjeta = await prisma.configuracaoGorjeta.findUnique({ where: { empresaId } });
+  const gorjetaHabilitada = !!configGorjeta?.ativa;
+  let gorjetaPercentual = null;
+  let gorjetaValor = 0;
+
+  if (gorjetaHabilitada && !semGorjeta) {
+    if (gorjetaValorFixo !== undefined && configGorjeta.permitirValorFixo) {
+      gorjetaValor = Math.max(0, Number(gorjetaValorFixo) || 0);
+    } else {
+      const percentual = configGorjeta.permitirClienteEscolher && percentualEscolhidoCliente !== undefined
+        ? Number(percentualEscolhidoCliente)
+        : Number(configGorjeta.percentualPadrao);
+      gorjetaPercentual = Math.min(Math.max(percentual || 0, 0), 100);
+      gorjetaValor = Math.round(valorTotal * (gorjetaPercentual / 100) * 100) / 100;
+    }
+  }
+
   let clienteId = null;
   if (clienteTelefone && clienteTelefone.trim()) {
     const telefoneNormalizado = normalizarTelefone(clienteTelefone);
@@ -162,6 +180,9 @@ async function criarPedidoCore(empresaId, garcom, dados) {
         cupomId: cupom?.id || null,
         garcomNome: tipo === 'MESA' ? garcom?.nome || null : null,
         garcomId: tipo === 'MESA' ? garcom?.id || null : null,
+        gorjetaHabilitada,
+        gorjetaPercentual,
+        gorjetaValor,
         origemPedido: origem || 'PAINEL',
         itens: { create: itensParaCriar }
       },

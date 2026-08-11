@@ -19,9 +19,20 @@ async function cardapio(req, res) {
     }
   });
 
+  const configGorjeta = await prisma.configuracaoGorjeta.findUnique({ where: { empresaId: empresa.id } });
+
   res.json({
     empresa: { nome: empresa.nome, slug: empresa.slug, logoUrl: empresa.logoUrl, corPrimaria: empresa.corPrimaria },
-    categorias: categorias.filter((c) => c.produtos.length > 0)
+    categorias: categorias.filter((c) => c.produtos.length > 0),
+    gorjeta: configGorjeta?.ativa
+      ? {
+          ativa: true,
+          percentualPadrao: Number(configGorjeta.percentualPadrao),
+          permitirClienteEscolher: configGorjeta.permitirClienteEscolher,
+          opcoesPercentual: JSON.parse(configGorjeta.opcoesPercentual),
+          permitirValorFixo: configGorjeta.permitirValorFixo
+        }
+      : { ativa: false }
   });
 }
 
@@ -40,7 +51,10 @@ async function criarPedido(req, res) {
 
   try {
     const pedido = await criarPedidoCore(empresa.id, null, dados);
-    res.status(201).json({ id: pedido.id, numero: pedido.numero, valorTotal: Number(pedido.valorTotal), status: pedido.status });
+    res.status(201).json({
+      id: pedido.id, numero: pedido.numero, valorTotal: Number(pedido.valorTotal), status: pedido.status,
+      gorjetaValor: Number(pedido.gorjetaValor), totalComGorjeta: Number(pedido.valorTotal) + Number(pedido.gorjetaValor)
+    });
   } catch (erro) {
     if (erro instanceof ErroPedido) return res.status(erro.status).json({ erro: erro.erro });
     throw erro;

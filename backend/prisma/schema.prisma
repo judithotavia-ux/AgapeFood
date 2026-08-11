@@ -282,6 +282,7 @@ model Empresa {
   conversasIA           ConversaIA[]
   acoesIA               AcaoIA[]
   tarefasIA             TarefaIA[]
+  configuracaoGorjeta   ConfiguracaoGorjeta?
 
   @@map("empresas")
 }
@@ -823,6 +824,11 @@ model Pedido {
   garcomId  String?
   garcom    Usuario? @relation("PedidoGarcom", fields: [garcomId], references: [id])
 
+  // Gorjeta - sempre um retrato do momento da criacao, nunca recalculado depois
+  gorjetaHabilitada Boolean  @default(false)
+  gorjetaPercentual Decimal? @db.Decimal(5, 2)
+  gorjetaValor      Decimal  @default(0) @db.Decimal(10, 2)
+
   itens     PedidoItem[]
   avaliacao Avaliacao?
   printJobs PrintJob[]
@@ -1093,4 +1099,21 @@ model TarefaIA {
   empresa   Empresa @relation(fields: [empresaId], references: [id])
 
   @@map("tarefas_ia")
+}
+
+model ConfiguracaoGorjeta {
+  id                      String  @id @default(uuid())
+  ativa                   Boolean @default(false)
+  percentualPadrao        Decimal @default(10) @db.Decimal(5, 2)
+  permitirClienteEscolher Boolean @default(true)
+  opcoesPercentual        String  @default("[5,10,12,15]")
+  permitirValorFixo       Boolean @default(false)
+
+  criadoEm    DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  empresaId String  @unique
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+
+  @@map("configuracoes_gorjeta")
 }

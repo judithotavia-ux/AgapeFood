@@ -54,6 +54,13 @@ function montarComandaGarcom(pedido, itens) {
     linha('separador')
   ];
   linhas.push(...formatarItens(itens));
+  linhas.push(linha('separador'));
+  linhas.push(linha('texto', `CONSUMO: R$ ${Number(pedido.valorTotal).toFixed(2)}`));
+  if (Number(pedido.gorjetaValor) > 0) {
+    const percentualTexto = pedido.gorjetaPercentual ? ` ${Number(pedido.gorjetaPercentual)}%` : '';
+    linhas.push(linha('texto', `GORJETA${percentualTexto}: R$ ${Number(pedido.gorjetaValor).toFixed(2)}`));
+  }
+  linhas.push(linha('texto', `TOTAL: R$ ${(Number(pedido.valorTotal) + Number(pedido.gorjetaValor)).toFixed(2)}`));
   if (pedido.observacoes) {
     linhas.push(linha('separador'));
     linhas.push(linha('texto', 'OBSERVAÇÃO:'));
@@ -76,7 +83,13 @@ function montarComandaDelivery(pedido, itens) {
   linhas.push(linha('separador'));
   linhas.push(linha('texto', `FORMA DE PAGAMENTO: ${pedido.formaPagamento || 'Não informado'}`));
   linhas.push(linha('texto', `TAXA DE ENTREGA: R$ ${Number(pedido.taxaEntrega).toFixed(2)}`));
-  linhas.push(linha('texto', `TOTAL: R$ ${Number(pedido.valorTotal).toFixed(2)}`));
+  if (Number(pedido.gorjetaValor) > 0) {
+    const percentualTexto = pedido.gorjetaPercentual ? ` ${Number(pedido.gorjetaPercentual)}%` : '';
+    linhas.push(linha('texto', `GORJETA${percentualTexto}: R$ ${Number(pedido.gorjetaValor).toFixed(2)}`));
+    linhas.push(linha('texto', `TOTAL: R$ ${(Number(pedido.valorTotal) + Number(pedido.gorjetaValor)).toFixed(2)}`));
+  } else {
+    linhas.push(linha('texto', `TOTAL: R$ ${Number(pedido.valorTotal).toFixed(2)}`));
+  }
   if (pedido.observacoes) {
     linhas.push(linha('separador'));
     linhas.push(linha('texto', 'OBSERVAÇÃO:'));
