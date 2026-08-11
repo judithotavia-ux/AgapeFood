@@ -13,6 +13,11 @@ enum TemaEmpresa {
   AUTOMATICO
 }
 
+enum AmbienteFiscal {
+  HOMOLOGACAO
+  PRODUCAO
+}
+
 enum PapelUsuario {
   SUPER_ADMIN
   ADMIN
@@ -235,6 +240,11 @@ model Empresa {
   exibirSloganComanda  Boolean @default(true)
   mensagemAgradecimento String? @db.Text
   rodapeComanda          String? @db.Text
+
+  // Dados fiscais - preparados pra uma futura integracao real de emissao (NFC-e/NF-e). Nenhum
+  // documento fiscal e emitido pelo sistema hoje; ambienteFiscal so registra a intencao pra
+  // quando essa integracao existir.
+  ambienteFiscal AmbienteFiscal @default(HOMOLOGACAO)
 
   // Aba 1 - Dados da empresa
   razaoSocial        String?

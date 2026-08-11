@@ -1,7 +1,7 @@
 const express = require('express');
 const {
   registrar, obterMinhaEmpresa, atualizarCashback, obterConfigIA, atualizarConfigIA,
-  obterIdentidadeVisual, atualizarIdentidadeVisual
+  obterIdentidadeVisual, atualizarIdentidadeVisual, obterDadosFiscais, atualizarDadosFiscais
 } = require('../controllers/empresa.controller');
 const { autenticar } = require('../middlewares/auth.middleware');
 const { exigirPermissao } = require('../utils/permissoes');
@@ -23,5 +23,8 @@ router.put('/minha/ia-config', autenticar, exigirPermissao('agape_ia.gerenciar_c
 
 router.get('/minha/identidade-visual', autenticar, exigirPermissao('configuracoes_empresa.visualizar'), obterIdentidadeVisual);
 router.put('/minha/identidade-visual', autenticar, exigirPermissao('configuracoes_empresa.gerenciar'), uploadLogos, atualizarIdentidadeVisual);
+
+router.get('/minha/dados-fiscais', autenticar, exigirPermissao('configuracoes_empresa.visualizar'), obterDadosFiscais);
+router.put('/minha/dados-fiscais', autenticar, exigirPermissao('configuracoes_empresa.gerenciar'), atualizarDadosFiscais);
 
 module.exports = router;

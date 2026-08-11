@@ -246,6 +246,67 @@ async function atualizarConfigIA(req, res) {
   res.json({ configurada: true, chaveMascarada });
 }
 
+const CAMPOS_DADOS_FISCAIS = {
+  id: true, nome: true, razaoSocial: true, cnpj: true, inscricaoEstadual: true, inscricaoMunicipal: true,
+  regimeTributario: true, ambienteFiscal: true,
+  cep: true, endereco: true, numero: true, complemento: true, bairro: true, cidade: true, estado: true, pais: true
+};
+
+async function obterDadosFiscais(req, res) {
+  const empresa = await prisma.empresa.findUnique({ where: { id: req.usuario.empresaId }, select: CAMPOS_DADOS_FISCAIS });
+  res.json(empresa);
+}
+
+async function atualizarDadosFiscais(req, res) {
+  const empresaId = req.usuario.empresaId;
+  const existente = await prisma.empresa.findUnique({ where: { id: empresaId }, select: CAMPOS_DADOS_FISCAIS });
+  if (!existente) return res.status(404).json({ erro: 'Empresa não encontrada.' });
+
+  const {
+    razaoSocial, cnpj, inscricaoEstadual, inscricaoMunicipal, regimeTributario, ambienteFiscal,
+    cep, endereco, numero, complemento, bairro, cidade, estado, pais
+  } = req.body || {};
+
+  if (ambienteFiscal && !['HOMOLOGACAO', 'PRODUCAO'].includes(ambienteFiscal)) {
+    return res.status(400).json({ erro: 'Ambiente fiscal inválido.' });
+  }
+
+  const cnpjLimpo = cnpj !== undefined ? (cnpj ? apenasDigitos(cnpj) : null) : existente.cnpj;
+  if (cnpjLimpo && cnpjLimpo !== existente.cnpj) {
+    const cnpjExistente = await prisma.empresa.findUnique({ where: { cnpj: cnpjLimpo } });
+    if (cnpjExistente && cnpjExistente.id !== empresaId) return res.status(400).json({ erro: 'Já existe uma empresa cadastrada com esse CNPJ.' });
+  }
+
+  const campo = (valor, atual) => (valor !== undefined ? (valor || null) : atual);
+
+  const data = {
+    razaoSocial: campo(razaoSocial, existente.razaoSocial),
+    cnpj: cnpjLimpo,
+    inscricaoEstadual: campo(inscricaoEstadual, existente.inscricaoEstadual),
+    inscricaoMunicipal: campo(inscricaoMunicipal, existente.inscricaoMunicipal),
+    regimeTributario: campo(regimeTributario, existente.regimeTributario),
+    ambienteFiscal: ambienteFiscal || existente.ambienteFiscal,
+    cep: campo(cep, existente.cep),
+    endereco: campo(endereco, existente.endereco),
+    numero: campo(numero, existente.numero),
+    complemento: campo(complemento, existente.complemento),
+    bairro: campo(bairro, existente.bairro),
+    cidade: campo(cidade, existente.cidade),
+    estado: campo(estado, existente.estado),
+    pais: pais !== undefined ? (pais || 'Brasil') : existente.pais
+  };
+
+  const atualizado = await prisma.empresa.update({ where: { id: empresaId }, data, select: CAMPOS_DADOS_FISCAIS });
+
+  registrarAuditoria({
+    empresaId, usuarioId: req.usuario.id, ip: req.ip,
+    acao: 'empresa.atualizar_dados_fiscais', entidade: 'Empresa', entidadeId: empresaId,
+    valorAntes: existente, valorDepois: atualizado
+  });
+
+  res.json(atualizado);
+}
+
 async function obterIdentidadeVisual(req, res) {
   const empresa = await prisma.empresa.findUnique({ where: { id: req.usuario.empresaId }, select: CAMPOS_IDENTIDADE_VISUAL });
   res.json(empresa);
@@ -310,5 +371,5 @@ async function atualizarIdentidadeVisual(req, res) {
 
 module.exports = {
   registrar, obterMinhaEmpresa, atualizarCashback, obterConfigIA, atualizarConfigIA,
-  obterIdentidadeVisual, atualizarIdentidadeVisual
+  obterIdentidadeVisual, atualizarIdentidadeVisual, obterDadosFiscais, atualizarDadosFiscais
 };

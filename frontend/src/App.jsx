@@ -34,6 +34,7 @@ import AprovacoesGerenciais from './pages/AprovacoesGerenciais';
 import PerfisPersonalizados from './pages/PerfisPersonalizados';
 import LogAuditoria from './pages/LogAuditoria';
 import IdentidadeVisual from './pages/IdentidadeVisual';
+import DadosFiscais from './pages/DadosFiscais';
 
 export default function App() {
   return (
@@ -229,6 +230,14 @@ export default function App() {
             element={
               <RotaProtegida>
                 <IdentidadeVisual />
+              </RotaProtegida>
+            }
+          />
+          <Route
+            path="/dados-fiscais"
+            element={
+              <RotaProtegida>
+                <DadosFiscais />
               </RotaProtegida>
             }
           />
