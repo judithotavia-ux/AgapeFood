@@ -1,7 +1,11 @@
 const express = require('express');
-const { registrar, obterMinhaEmpresa, atualizarCashback, obterConfigIA, atualizarConfigIA } = require('../controllers/empresa.controller');
+const {
+  registrar, obterMinhaEmpresa, atualizarCashback, obterConfigIA, atualizarConfigIA,
+  obterIdentidadeVisual, atualizarIdentidadeVisual
+} = require('../controllers/empresa.controller');
 const { autenticar } = require('../middlewares/auth.middleware');
 const { exigirPermissao } = require('../utils/permissoes');
+const uploadLogos = require('../middlewares/uploadLogo.middleware');
 
 const router = express.Router();
 
@@ -16,5 +20,8 @@ router.get('/minha', autenticar, obterMinhaEmpresa);
 router.put('/minha/cashback', autenticar, exigirPermissao('marketing.gerenciar'), atualizarCashback);
 router.get('/minha/ia-config', autenticar, obterConfigIA);
 router.put('/minha/ia-config', autenticar, exigirPermissao('agape_ia.gerenciar_config'), atualizarConfigIA);
+
+router.get('/minha/identidade-visual', autenticar, exigirPermissao('configuracoes_empresa.visualizar'), obterIdentidadeVisual);
+router.put('/minha/identidade-visual', autenticar, exigirPermissao('configuracoes_empresa.gerenciar'), uploadLogos, atualizarIdentidadeVisual);
 
 module.exports = router;

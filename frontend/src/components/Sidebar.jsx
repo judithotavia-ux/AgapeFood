@@ -11,6 +11,7 @@ const ITENS_ATIVOS = [
   { to: '/aprovacoes-gerenciais', label: 'Aprovações Gerenciais', icone: '🔐' },
   { to: '/perfis-personalizados', label: 'Perfis Personalizados', icone: '🧩' },
   { to: '/log-auditoria', label: 'Log de Auditoria', icone: '📜' },
+  { to: '/identidade-visual', label: 'Identidade Visual', icone: '🎨' },
   { to: '/meu-desempenho', label: 'Minhas Vendas e Gorjetas', icone: '📈' },
   { to: '/cardapio', label: 'Cardápio', icone: '🍔' },
   { to: '/cozinha', label: 'Cozinha', icone: '👨‍🍳' },

@@ -1,0 +1,11 @@
+-- AlterTable
+ALTER TABLE `empresas` ADD COLUMN `corDestaque` VARCHAR(191) NULL,
+    ADD COLUMN `corSecundaria` VARCHAR(191) NULL,
+    ADD COLUMN `corTexto` VARCHAR(191) NULL,
+    ADD COLUMN `exibirMarcaAgapeFood` BOOLEAN NOT NULL DEFAULT true,
+    ADD COLUMN `logoCardapioUrl` VARCHAR(191) NULL,
+    ADD COLUMN `logoImpressaoUrl` VARCHAR(191) NULL,
+    ADD COLUMN `logoReciboUrl` VARCHAR(191) NULL,
+    ADD COLUMN `slogan` VARCHAR(191) NULL,
+    ADD COLUMN `tema` ENUM('CLARO', 'ESCURO', 'AUTOMATICO') NOT NULL DEFAULT 'AUTOMATICO';
+

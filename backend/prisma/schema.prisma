@@ -7,6 +7,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum TemaEmpresa {
+  CLARO
+  ESCURO
+  AUTOMATICO
+}
+
 enum PapelUsuario {
   SUPER_ADMIN
   ADMIN
@@ -213,6 +219,17 @@ model Empresa {
   corPrimaria String   @default("#D4AF37")
   ativo       Boolean  @default(true)
   criadoEm    DateTime @default(now())
+
+  // Identidade visual
+  slogan           String?
+  corSecundaria    String?
+  corDestaque      String?
+  corTexto         String?
+  tema             TemaEmpresa @default(AUTOMATICO)
+  logoImpressaoUrl String?
+  logoCardapioUrl  String?
+  logoReciboUrl    String?
+  exibirMarcaAgapeFood Boolean @default(true)
 
   // Aba 1 - Dados da empresa
   razaoSocial        String?

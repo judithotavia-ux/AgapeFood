@@ -1,7 +1,31 @@
 const bcrypt = require('bcryptjs');
+const path = require('path');
+const fs = require('fs');
 const prisma = require('../prisma/client');
 const { gerarToken } = require('./auth.controller');
 const { criptografar, descriptografar } = require('../utils/criptografia');
+const { registrarAuditoria } = require('../utils/auditoria');
+
+const CORES_HEX = /^#[0-9A-Fa-f]{6}$/;
+const CAMPOS_IDENTIDADE_VISUAL = {
+  id: true, nome: true, slogan: true, logoUrl: true, logoImpressaoUrl: true, logoCardapioUrl: true, logoReciboUrl: true,
+  corPrimaria: true, corSecundaria: true, corDestaque: true, corTexto: true, tema: true, exibirMarcaAgapeFood: true
+};
+
+function montarUrlLogo(req, nomeArquivo) {
+  if (!nomeArquivo) return null;
+  return `${req.protocol}://${req.get('host')}/uploads/empresas/${nomeArquivo}`;
+}
+
+function extrairNomeArquivoLogo(url) {
+  if (!url) return null;
+  return url.split('/uploads/empresas/')[1] || null;
+}
+
+function removerArquivoLogoAntigo(url) {
+  const nome = extrairNomeArquivoLogo(url);
+  if (nome) fs.unlink(path.join(__dirname, '..', 'uploads', 'empresas', nome), () => {});
+}
 
 const TIPOS_CANAL = ['MOTOBOY_PROPRIO', 'IFOOD', 'UBER_EATS', 'NOVENTA_NOVE_FOOD'];
 const CATEGORIAS_PADRAO = ['Pratos Principais', 'Bebidas', 'Sobremesas'];
@@ -220,4 +244,59 @@ async function atualizarConfigIA(req, res) {
   res.json({ configurada: true, chaveMascarada });
 }
 
-module.exports = { registrar, obterMinhaEmpresa, atualizarCashback, obterConfigIA, atualizarConfigIA };
+async function obterIdentidadeVisual(req, res) {
+  const empresa = await prisma.empresa.findUnique({ where: { id: req.usuario.empresaId }, select: CAMPOS_IDENTIDADE_VISUAL });
+  res.json(empresa);
+}
+
+async function atualizarIdentidadeVisual(req, res) {
+  const empresaId = req.usuario.empresaId;
+  const existente = await prisma.empresa.findUnique({ where: { id: empresaId }, select: CAMPOS_IDENTIDADE_VISUAL });
+  if (!existente) return res.status(404).json({ erro: 'Empresa não encontrada.' });
+
+  const { slogan, corPrimaria, corSecundaria, corDestaque, corTexto, tema, exibirMarcaAgapeFood } = req.body || {};
+
+  for (const [rotulo, valor] of [['corPrimaria', corPrimaria], ['corSecundaria', corSecundaria], ['corDestaque', corDestaque], ['corTexto', corTexto]]) {
+    if (valor && !CORES_HEX.test(valor)) return res.status(400).json({ erro: `Cor "${rotulo}" inválida. Use o formato hexadecimal, ex: #D4AF37.` });
+  }
+  if (tema && !['CLARO', 'ESCURO', 'AUTOMATICO'].includes(tema)) return res.status(400).json({ erro: 'Tema inválido.' });
+
+  const data = {
+    slogan: slogan !== undefined ? (slogan || null) : existente.slogan,
+    corPrimaria: corPrimaria || existente.corPrimaria,
+    corSecundaria: corSecundaria !== undefined ? (corSecundaria || null) : existente.corSecundaria,
+    corDestaque: corDestaque !== undefined ? (corDestaque || null) : existente.corDestaque,
+    corTexto: corTexto !== undefined ? (corTexto || null) : existente.corTexto,
+    tema: tema || existente.tema,
+    exibirMarcaAgapeFood: exibirMarcaAgapeFood !== undefined ? (exibirMarcaAgapeFood === 'true' || exibirMarcaAgapeFood === true) : existente.exibirMarcaAgapeFood
+  };
+
+  const arquivos = req.files || {};
+  const mapaCampos = { logo: 'logoUrl', logoImpressao: 'logoImpressaoUrl', logoCardapio: 'logoCardapioUrl', logoRecibo: 'logoReciboUrl' };
+  for (const [campoArquivo, campoUrl] of Object.entries(mapaCampos)) {
+    const arquivo = arquivos[campoArquivo]?.[0];
+    const remover = req.body[`remover_${campoArquivo}`];
+    if (arquivo) {
+      removerArquivoLogoAntigo(existente[campoUrl]);
+      data[campoUrl] = montarUrlLogo(req, arquivo.filename);
+    } else if (remover === 'true' || remover === true) {
+      removerArquivoLogoAntigo(existente[campoUrl]);
+      data[campoUrl] = null;
+    }
+  }
+
+  const atualizado = await prisma.empresa.update({ where: { id: empresaId }, data, select: CAMPOS_IDENTIDADE_VISUAL });
+
+  registrarAuditoria({
+    empresaId, usuarioId: req.usuario.id, ip: req.ip,
+    acao: 'empresa.atualizar_identidade_visual', entidade: 'Empresa', entidadeId: empresaId,
+    valorAntes: existente, valorDepois: atualizado
+  });
+
+  res.json(atualizado);
+}
+
+module.exports = {
+  registrar, obterMinhaEmpresa, atualizarCashback, obterConfigIA, atualizarConfigIA,
+  obterIdentidadeVisual, atualizarIdentidadeVisual
+};

@@ -33,6 +33,7 @@ import MeuDesempenho from './pages/MeuDesempenho';
 import AprovacoesGerenciais from './pages/AprovacoesGerenciais';
 import PerfisPersonalizados from './pages/PerfisPersonalizados';
 import LogAuditoria from './pages/LogAuditoria';
+import IdentidadeVisual from './pages/IdentidadeVisual';
 
 export default function App() {
   return (
@@ -220,6 +221,14 @@ export default function App() {
             element={
               <RotaProtegida>
                 <LogAuditoria />
+              </RotaProtegida>
+            }
+          />
+          <Route
+            path="/identidade-visual"
+            element={
+              <RotaProtegida>
+                <IdentidadeVisual />
               </RotaProtegida>
             }
           />
