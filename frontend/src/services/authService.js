@@ -22,3 +22,13 @@ export function logout() {
 export function estaAutenticado() {
   return !!localStorage.getItem('agapefood_token');
 }
+
+export async function esqueciSenha(email) {
+  const { data } = await api.post('/auth/esqueci-senha', { email });
+  return data;
+}
+
+export async function redefinirSenha(token, novaSenha) {
+  const { data } = await api.post('/auth/redefinir-senha', { token, novaSenha });
+  return data;
+}

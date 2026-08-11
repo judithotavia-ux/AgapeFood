@@ -360,8 +360,22 @@ model Usuario {
   movimentacoesEstoque MovimentacaoEstoque[]
   printLogs            PrintLog[]
   conversasIA          ConversaIA[]
+  tokensResetSenha     TokenResetSenha[]
 
   @@map("usuarios")
+}
+
+model TokenResetSenha {
+  id       String    @id @default(uuid())
+  token    String    @unique
+  expiraEm DateTime
+  usadoEm  DateTime?
+  criadoEm DateTime  @default(now())
+
+  usuarioId String
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("tokens_reset_senha")
 }
 
 model Categoria {

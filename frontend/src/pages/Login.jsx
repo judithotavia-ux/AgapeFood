@@ -47,6 +47,9 @@ export default function Login() {
           <label>Senha</label>
           <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} placeholder="••••••••" required />
         </div>
+        <div style={{ textAlign: 'right', marginTop: 8 }}>
+          <Link to="/esqueci-senha" style={{ fontSize: 12, color: 'var(--texto2)' }}>Esqueci minha senha</Link>
+        </div>
 
         {erro && <div className="erro-msg">{erro}</div>}
 

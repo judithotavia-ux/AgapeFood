@@ -25,6 +25,8 @@ import Assinatura from './pages/Assinatura';
 import CadastroEmpresa from './pages/CadastroEmpresa';
 import AgapeIAChat from './pages/AgapeIAChat';
 import AgapeIADashboard from './pages/AgapeIADashboard';
+import EsqueciSenha from './pages/EsqueciSenha';
+import RedefinirSenha from './pages/RedefinirSenha';
 
 export default function App() {
   return (
@@ -32,6 +34,8 @@ export default function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/esqueci-senha" element={<EsqueciSenha />} />
+          <Route path="/redefinir-senha" element={<RedefinirSenha />} />
           <Route path="/cadastro-empresa" element={<CadastroEmpresa />} />
           <Route path="/cardapio/:slug" element={<CardapioPublico />} />
           <Route path="/avaliacao/:pedidoId" element={<AvaliacaoPublica />} />
