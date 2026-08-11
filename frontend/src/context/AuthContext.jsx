@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import * as authService from '../services/authService';
 import { conectarSocket, desconectarSocket } from '../services/socket';
+import { aplicarTemaEmpresa } from '../utils/tema';
 
 const AuthContext = createContext(null);
 
@@ -26,6 +27,10 @@ export function AuthProvider({ children }) {
     }
     carregar();
   }, []);
+
+  useEffect(() => {
+    if (usuario?.empresa?.corPrimaria) aplicarTemaEmpresa(usuario.empresa.corPrimaria);
+  }, [usuario?.empresa?.corPrimaria]);
 
   async function entrar(email, senha) {
     await authService.login(email, senha);

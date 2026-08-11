@@ -9,7 +9,9 @@ const { registrarAuditoria } = require('../utils/auditoria');
 const CORES_HEX = /^#[0-9A-Fa-f]{6}$/;
 const CAMPOS_IDENTIDADE_VISUAL = {
   id: true, nome: true, slogan: true, logoUrl: true, logoImpressaoUrl: true, logoCardapioUrl: true, logoReciboUrl: true,
-  corPrimaria: true, corSecundaria: true, corDestaque: true, corTexto: true, tema: true, exibirMarcaAgapeFood: true
+  corPrimaria: true, corSecundaria: true, corDestaque: true, corTexto: true, tema: true, exibirMarcaAgapeFood: true,
+  exibirLogoCardapio: true, exibirSloganCardapio: true, exibirSloganComanda: true,
+  mensagemAgradecimento: true, rodapeComanda: true
 };
 
 function montarUrlLogo(req, nomeArquivo) {
@@ -254,12 +256,17 @@ async function atualizarIdentidadeVisual(req, res) {
   const existente = await prisma.empresa.findUnique({ where: { id: empresaId }, select: CAMPOS_IDENTIDADE_VISUAL });
   if (!existente) return res.status(404).json({ erro: 'Empresa não encontrada.' });
 
-  const { slogan, corPrimaria, corSecundaria, corDestaque, corTexto, tema, exibirMarcaAgapeFood } = req.body || {};
+  const {
+    slogan, corPrimaria, corSecundaria, corDestaque, corTexto, tema, exibirMarcaAgapeFood,
+    exibirLogoCardapio, exibirSloganCardapio, exibirSloganComanda, mensagemAgradecimento, rodapeComanda
+  } = req.body || {};
 
   for (const [rotulo, valor] of [['corPrimaria', corPrimaria], ['corSecundaria', corSecundaria], ['corDestaque', corDestaque], ['corTexto', corTexto]]) {
     if (valor && !CORES_HEX.test(valor)) return res.status(400).json({ erro: `Cor "${rotulo}" inválida. Use o formato hexadecimal, ex: #D4AF37.` });
   }
   if (tema && !['CLARO', 'ESCURO', 'AUTOMATICO'].includes(tema)) return res.status(400).json({ erro: 'Tema inválido.' });
+
+  const paraBooleano = (valor, atual) => (valor !== undefined ? (valor === 'true' || valor === true) : atual);
 
   const data = {
     slogan: slogan !== undefined ? (slogan || null) : existente.slogan,
@@ -268,7 +275,12 @@ async function atualizarIdentidadeVisual(req, res) {
     corDestaque: corDestaque !== undefined ? (corDestaque || null) : existente.corDestaque,
     corTexto: corTexto !== undefined ? (corTexto || null) : existente.corTexto,
     tema: tema || existente.tema,
-    exibirMarcaAgapeFood: exibirMarcaAgapeFood !== undefined ? (exibirMarcaAgapeFood === 'true' || exibirMarcaAgapeFood === true) : existente.exibirMarcaAgapeFood
+    exibirMarcaAgapeFood: paraBooleano(exibirMarcaAgapeFood, existente.exibirMarcaAgapeFood),
+    exibirLogoCardapio: paraBooleano(exibirLogoCardapio, existente.exibirLogoCardapio),
+    exibirSloganCardapio: paraBooleano(exibirSloganCardapio, existente.exibirSloganCardapio),
+    exibirSloganComanda: paraBooleano(exibirSloganComanda, existente.exibirSloganComanda),
+    mensagemAgradecimento: mensagemAgradecimento !== undefined ? (mensagemAgradecimento || null) : existente.mensagemAgradecimento,
+    rodapeComanda: rodapeComanda !== undefined ? (rodapeComanda || null) : existente.rodapeComanda
   };
 
   const arquivos = req.files || {};

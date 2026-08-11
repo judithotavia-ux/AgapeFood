@@ -105,6 +105,11 @@ export default function IdentidadeVisual() {
     formData.append('corTexto', dados.corTexto || '');
     formData.append('tema', dados.tema || 'AUTOMATICO');
     formData.append('exibirMarcaAgapeFood', String(dados.exibirMarcaAgapeFood !== false));
+    formData.append('exibirLogoCardapio', String(dados.exibirLogoCardapio !== false));
+    formData.append('exibirSloganCardapio', String(dados.exibirSloganCardapio !== false));
+    formData.append('exibirSloganComanda', String(dados.exibirSloganComanda !== false));
+    formData.append('mensagemAgradecimento', dados.mensagemAgradecimento || '');
+    formData.append('rodapeComanda', dados.rodapeComanda || '');
 
     const mapa = { logo: null, logoImpressao: 'logoImpressaoUrl', logoCardapio: 'logoCardapioUrl', logoRecibo: 'logoReciboUrl' };
     for (const campo of Object.keys(mapa)) {
@@ -188,10 +193,33 @@ export default function IdentidadeVisual() {
         </div>
 
         <div className="card">
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-            <input type="checkbox" checked={dados.exibirMarcaAgapeFood !== false} onChange={(e) => set('exibirMarcaAgapeFood', e.target.checked)} />
-            Exibir "Powered by Ágape Food" no cardápio digital
-          </label>
+          <h3 style={{ fontSize: 15, marginBottom: 14 }}>Onde exibir</h3>
+          <div style={{ display: 'grid', gap: 10 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
+              <input type="checkbox" checked={dados.exibirLogoCardapio !== false} onChange={(e) => set('exibirLogoCardapio', e.target.checked)} />
+              Logo no cardápio digital
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
+              <input type="checkbox" checked={dados.exibirSloganCardapio !== false} onChange={(e) => set('exibirSloganCardapio', e.target.checked)} />
+              Slogan no cardápio digital
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
+              <input type="checkbox" checked={dados.exibirSloganComanda !== false} onChange={(e) => set('exibirSloganComanda', e.target.checked)} />
+              Slogan na comanda impressa (a impressora térmica não imprime o logo, só texto)
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
+              <input type="checkbox" checked={dados.exibirMarcaAgapeFood !== false} onChange={(e) => set('exibirMarcaAgapeFood', e.target.checked)} />
+              Exibir "Powered by Ágape Food" no cardápio digital
+            </label>
+          </div>
+        </div>
+
+        <div className="card">
+          <h3 style={{ fontSize: 15, marginBottom: 14 }}>Mensagens da comanda</h3>
+          <label>Mensagem de agradecimento</label>
+          <input type="text" value={dados.mensagemAgradecimento || ''} onChange={(e) => set('mensagemAgradecimento', e.target.value)} placeholder="Ex: Obrigado pela preferência!" style={{ marginBottom: 12 }} />
+          <label>Rodapé adicional (opcional)</label>
+          <input type="text" value={dados.rodapeComanda || ''} onChange={(e) => set('rodapeComanda', e.target.value)} placeholder="Ex: Siga @suaempresa no Instagram" />
         </div>
 
         {erro && <div className="erro-msg">{erro}</div>}

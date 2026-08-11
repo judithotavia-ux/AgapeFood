@@ -24,7 +24,31 @@ function numeroFormatado(pedido) {
   return String(pedido.numero).padStart(6, '0');
 }
 
-// Comanda de producao (cozinha/bar/confeitaria/etc) - NUNCA inclui valores financeiros
+// Impressora termica desse sistema so imprime texto (sem imagem) - por isso a marca da empresa
+// aqui e sempre nome/slogan/dados em texto, nunca o logo. Sem empresa (chamada antiga/teste),
+// cai no nome da propria plataforma como fallback.
+function cabecalhoDaEmpresa(empresa) {
+  return { cabecalho: (empresa?.nome || 'ÁGAPE FOOD').toUpperCase(), subcabecalho: empresa?.slogan && empresa?.exibirSloganComanda ? empresa.slogan : null };
+}
+
+function rodapeDaEmpresa(empresa) {
+  const linhas = [];
+  if (!empresa) return linhas;
+  const dadosContato = [empresa.cnpj, [empresa.endereco, empresa.numero].filter(Boolean).join(', '), empresa.telefone].filter(Boolean);
+  if (dadosContato.length) {
+    linhas.push(linha('separador'));
+    dadosContato.forEach((d) => linhas.push(linha('detalhe', d)));
+  }
+  if (empresa.mensagemAgradecimento) {
+    linhas.push(linha('separador'));
+    linhas.push(linha('texto', empresa.mensagemAgradecimento));
+  }
+  if (empresa.rodapeComanda) linhas.push(linha('detalhe', empresa.rodapeComanda));
+  return linhas;
+}
+
+// Comanda de producao (cozinha/bar/confeitaria/etc) - NUNCA inclui valores financeiros nem marca
+// (documento operacional interno, ninguem de fora ve)
 function montarComandaProducao(pedido, itensDoSetor) {
   const dataHora = new Date(pedido.criadoEm);
   const linhas = [
@@ -46,7 +70,7 @@ function montarComandaProducao(pedido, itensDoSetor) {
   return { cabecalho: 'ÁGAPE FOOD', subcabecalho: 'SERVINDO COM EXCELÊNCIA', linhas };
 }
 
-function montarComandaGarcom(pedido, itens) {
+function montarComandaGarcom(pedido, itens, empresa) {
   const linhas = [
     linha('titulo', `PEDIDO #${numeroFormatado(pedido)}`),
     linha('texto', pedido.mesa ? `MESA: ${pedido.mesa.numero}` : 'BALCÃO'),
@@ -66,10 +90,11 @@ function montarComandaGarcom(pedido, itens) {
     linhas.push(linha('texto', 'OBSERVAÇÃO:'));
     linhas.push(linha('texto', pedido.observacoes));
   }
-  return { cabecalho: 'ÁGAPE FOOD', subcabecalho: null, linhas };
+  linhas.push(...rodapeDaEmpresa(empresa));
+  return { ...cabecalhoDaEmpresa(empresa), linhas };
 }
 
-function montarComandaDelivery(pedido, itens) {
+function montarComandaDelivery(pedido, itens, empresa) {
   const linhas = [
     linha('titulo', `PEDIDO #${numeroFormatado(pedido)}`),
     linha('texto', `CLIENTE: ${pedido.clienteNome || 'Não informado'}`),
@@ -95,7 +120,8 @@ function montarComandaDelivery(pedido, itens) {
     linhas.push(linha('texto', 'OBSERVAÇÃO:'));
     linhas.push(linha('texto', pedido.observacoes));
   }
-  return { cabecalho: 'ÁGAPE FOOD', subcabecalho: null, linhas };
+  linhas.push(...rodapeDaEmpresa(empresa));
+  return { ...cabecalhoDaEmpresa(empresa), linhas };
 }
 
 function montarCancelamento(pedido, motivo) {
@@ -173,7 +199,10 @@ async function criarJobTeste(impressora) {
 // pedido precisa vir com itens + mesa incluidos (ver include em pedido.controller.js)
 async function criarJobsParaPedido(pedido) {
   const empresaId = pedido.empresaId;
-  const impressorasAtivas = await prisma.printer.findMany({ where: { empresaId, ativa: true } });
+  const [impressorasAtivas, empresa] = await Promise.all([
+    prisma.printer.findMany({ where: { empresaId, ativa: true } }),
+    prisma.empresa.findUnique({ where: { id: empresaId } })
+  ]);
   if (!impressorasAtivas.length) return [];
 
   const especificacoes = [];
@@ -193,7 +222,7 @@ async function criarJobsParaPedido(pedido) {
   if (pedido.tipo === 'MESA') {
     const impressorasGarcom = impressorasAtivas.filter((p) => p.setor === 'GARCOM');
     if (impressorasGarcom.length) {
-      const conteudo = montarComandaGarcom(pedido, pedido.itens);
+      const conteudo = montarComandaGarcom(pedido, pedido.itens, empresa);
       for (const impressora of impressorasGarcom) {
         especificacoes.push({ empresaId, printerId: impressora.id, pedidoId: pedido.id, setor: 'GARCOM', tipoDocumento: 'COMANDA_GARCOM', prioridade, conteudo });
       }
@@ -203,7 +232,7 @@ async function criarJobsParaPedido(pedido) {
   if (pedido.tipo === 'DELIVERY') {
     const impressorasDelivery = impressorasAtivas.filter((p) => p.setor === 'DELIVERY');
     if (impressorasDelivery.length) {
-      const conteudo = montarComandaDelivery(pedido, pedido.itens);
+      const conteudo = montarComandaDelivery(pedido, pedido.itens, empresa);
       for (const impressora of impressorasDelivery) {
         especificacoes.push({ empresaId, printerId: impressora.id, pedidoId: pedido.id, setor: 'DELIVERY', tipoDocumento: 'COMANDA_DELIVERY', prioridade, conteudo });
       }

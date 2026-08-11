@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const ITENS_ATIVOS = [
   { to: '/dashboard', label: 'Dashboard', icone: '📊' },
@@ -27,6 +28,9 @@ const ITENS_ATIVOS = [
 ];
 
 export default function Sidebar() {
+  const { usuario } = useAuth();
+  const empresa = usuario?.empresa;
+
   return (
     <aside style={{
       width: 230,
@@ -38,8 +42,11 @@ export default function Sidebar() {
       flexShrink: 0
     }}>
       <div style={{ padding: '22px 20px', borderBottom: '1px solid var(--borda)' }}>
-        <h2 style={{ fontSize: 20 }}>AgapeFood</h2>
-        <div style={{ fontSize: 11, color: 'var(--texto2)', marginTop: 2 }}>Painel administrativo</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {empresa?.logoUrl && <img src={empresa.logoUrl} alt="" style={{ width: 32, height: 32, objectFit: 'contain', borderRadius: 6 }} />}
+          <h2 style={{ fontSize: 20 }}>{empresa?.nome || 'AgapeFood'}</h2>
+        </div>
+        <div style={{ fontSize: 11, color: 'var(--texto2)', marginTop: 2 }}>{empresa?.slogan || 'Painel administrativo'}</div>
       </div>
 
       <nav style={{ flex: 1, padding: '14px 0' }}>

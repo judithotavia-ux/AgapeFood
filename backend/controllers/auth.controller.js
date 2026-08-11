@@ -71,7 +71,10 @@ async function me(req, res) {
     nome: usuario.nome,
     email: usuario.email,
     papel: usuario.papel,
-    empresa: usuario.empresa ? { id: usuario.empresa.id, nome: usuario.empresa.nome, slug: usuario.empresa.slug } : null
+    empresa: usuario.empresa ? {
+      id: usuario.empresa.id, nome: usuario.empresa.nome, slug: usuario.empresa.slug,
+      logoUrl: usuario.empresa.logoUrl, slogan: usuario.empresa.slogan, corPrimaria: usuario.empresa.corPrimaria
+    } : null
   });
 }
 

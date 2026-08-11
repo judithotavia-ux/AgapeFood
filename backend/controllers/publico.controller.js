@@ -22,7 +22,15 @@ async function cardapio(req, res) {
   const configGorjeta = await prisma.configuracaoGorjeta.findUnique({ where: { empresaId: empresa.id } });
 
   res.json({
-    empresa: { nome: empresa.nome, slug: empresa.slug, logoUrl: empresa.logoUrl, corPrimaria: empresa.corPrimaria },
+    empresa: {
+      nome: empresa.nome, slug: empresa.slug,
+      logoUrl: empresa.exibirLogoCardapio ? (empresa.logoCardapioUrl || empresa.logoUrl) : null,
+      slogan: empresa.exibirSloganCardapio ? empresa.slogan : null,
+      corPrimaria: empresa.corPrimaria, corSecundaria: empresa.corSecundaria, corDestaque: empresa.corDestaque, corTexto: empresa.corTexto,
+      exibirMarcaAgapeFood: empresa.exibirMarcaAgapeFood,
+      whatsapp: empresa.whatsapp, telefone: empresa.telefone, instagram: empresa.instagram, facebook: empresa.facebook,
+      tiktok: empresa.tiktok, youtube: empresa.youtube, site: empresa.site
+    },
     categorias: categorias.filter((c) => c.produtos.length > 0),
     gorjeta: configGorjeta?.ativa
       ? {

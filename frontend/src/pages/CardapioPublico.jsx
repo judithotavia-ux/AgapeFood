@@ -163,6 +163,7 @@ export default function CardapioPublico() {
             <img src={dados.empresa.logoUrl} alt="" style={{ width: 64, height: 64, borderRadius: '50%', objectFit: 'cover', marginBottom: 10 }} />
           )}
           <h1 style={{ fontFamily: 'Georgia, serif', fontSize: 26, color: cor, margin: 0 }}>{dados.empresa.nome}</h1>
+          {dados.empresa.slogan && <div style={{ fontSize: 13, color: '#b8ac8e', marginTop: 4, fontStyle: 'italic' }}>{dados.empresa.slogan}</div>}
           <div style={{ fontSize: 12, color: '#b8ac8e', marginTop: 4 }}>Cardápio digital</div>
           {mesa && (
             <div style={{ display: 'inline-block', marginTop: 10, padding: '4px 14px', borderRadius: 20, border: `1px solid ${cor}`, color: cor, fontSize: 12, fontWeight: 600 }}>
@@ -214,9 +215,21 @@ export default function CardapioPublico() {
           </div>
         ))}
 
-        <div style={{ textAlign: 'center', fontSize: 11, color: '#5f5946', marginTop: 30 }}>
-          Cardápio powered by AgapeFood
-        </div>
+        {(dados.empresa.instagram || dados.empresa.facebook || dados.empresa.tiktok || dados.empresa.youtube || dados.empresa.whatsapp) && (
+          <div style={{ textAlign: 'center', marginTop: 26, display: 'flex', justifyContent: 'center', gap: 16, fontSize: 13 }}>
+            {dados.empresa.whatsapp && <a href={`https://wa.me/55${dados.empresa.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" style={{ color: cor }}>WhatsApp</a>}
+            {dados.empresa.instagram && <a href={dados.empresa.instagram} target="_blank" rel="noreferrer" style={{ color: cor }}>Instagram</a>}
+            {dados.empresa.facebook && <a href={dados.empresa.facebook} target="_blank" rel="noreferrer" style={{ color: cor }}>Facebook</a>}
+            {dados.empresa.tiktok && <a href={dados.empresa.tiktok} target="_blank" rel="noreferrer" style={{ color: cor }}>TikTok</a>}
+            {dados.empresa.youtube && <a href={dados.empresa.youtube} target="_blank" rel="noreferrer" style={{ color: cor }}>YouTube</a>}
+          </div>
+        )}
+
+        {dados.empresa.exibirMarcaAgapeFood !== false && (
+          <div style={{ textAlign: 'center', fontSize: 11, color: '#5f5946', marginTop: 18 }}>
+            Cardápio powered by AgapeFood
+          </div>
+        )}
       </div>
 
       {totalItensCarrinho > 0 && !carrinhoAberto && (

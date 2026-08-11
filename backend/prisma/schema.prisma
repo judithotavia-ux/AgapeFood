@@ -230,6 +230,11 @@ model Empresa {
   logoCardapioUrl  String?
   logoReciboUrl    String?
   exibirMarcaAgapeFood Boolean @default(true)
+  exibirLogoCardapio   Boolean @default(true)
+  exibirSloganCardapio Boolean @default(true)
+  exibirSloganComanda  Boolean @default(true)
+  mensagemAgradecimento String? @db.Text
+  rodapeComanda          String? @db.Text
 
   // Aba 1 - Dados da empresa
   razaoSocial        String?
