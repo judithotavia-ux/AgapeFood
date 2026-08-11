@@ -284,6 +284,8 @@ model Empresa {
   tarefasIA             TarefaIA[]
   configuracaoGorjeta   ConfiguracaoGorjeta?
   fechamentosGorjeta    FechamentoGorjeta[]
+  limitesAprovacao      LimiteAprovacao[]
+  aprovacoesGerenciais  AprovacaoGerencial[]
 
   @@map("empresas")
 }
@@ -373,6 +375,10 @@ model Usuario {
   percentualRateioGorjeta Decimal? @db.Decimal(5, 2)
   pontosGorjeta           Int?
 
+  // PIN curto (hash) usado pra aprovar excecao de desconto/cancelamento no caixa sem exigir a senha
+  // completa - so preenchido por quem efetivamente aprova excecao (normalmente ADMIN/GERENTE).
+  pinHash String?
+
   empresaId String?
   empresa   Empresa? @relation(fields: [empresaId], references: [id])
 
@@ -387,6 +393,8 @@ model Usuario {
   distribuicoesGorjeta DistribuicaoGorjeta[] @relation("DistribuicaoGarcom")
   fechamentosGorjetaCriados FechamentoGorjeta[] @relation("FechamentoCriadoPor")
   configuracoesGorjetaAlteradas ConfiguracaoGorjeta[] @relation("ConfiguracaoGorjetaAlteradaPor")
+  aprovacoesSolicitadas AprovacaoGerencial[] @relation("AprovacaoSolicitante")
+  aprovacoesConcedidas  AprovacaoGerencial[] @relation("AprovacaoAprovador")
 
   @@map("usuarios")
 }
@@ -840,9 +848,10 @@ model Pedido {
   fechamentoGorjetaId String?
   fechamentoGorjeta   FechamentoGorjeta? @relation(fields: [fechamentoGorjetaId], references: [id])
 
-  itens     PedidoItem[]
-  avaliacao Avaliacao?
-  printJobs PrintJob[]
+  itens       PedidoItem[]
+  avaliacao   Avaliacao?
+  printJobs   PrintJob[]
+  aprovacoes  AprovacaoGerencial[]
 
   @@unique([empresaId, canalEntrega, idExterno])
   @@map("pedidos")
@@ -1229,4 +1238,51 @@ model PerfilPermissaoPadrao {
   @@unique([papel, permissaoId])
   @@index([papel])
   @@map("perfis_permissao_padrao")
+}
+
+// Limite (por papel, por empresa) de desconto que dispensa aprovacao de um superior.
+// Sem registro pra um papel = sem excecao possivel: toda solicitacao desse papel exige aprovacao.
+model LimiteAprovacao {
+  id                       String       @id @default(uuid())
+  papel                    PapelUsuario
+  limiteDescontoPercentual Decimal?     @db.Decimal(5, 2)
+  limiteDescontoValor      Decimal?     @db.Decimal(10, 2)
+  atualizadoEm             DateTime     @updatedAt
+
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+
+  @@unique([empresaId, papel])
+  @@map("limites_aprovacao")
+}
+
+enum TipoAprovacaoGerencial {
+  DESCONTO
+  CANCELAMENTO
+}
+
+// Registro de toda vez que um desconto/cancelamento passou do limite de quem pediu e precisou
+// do PIN de um aprovador. E o rastro de auditoria minimo desse fluxo.
+model AprovacaoGerencial {
+  id          String                  @id @default(uuid())
+  tipo        TipoAprovacaoGerencial
+  valorAntes  Decimal?                @db.Decimal(10, 2)
+  valorDepois Decimal?                @db.Decimal(10, 2)
+  percentual  Decimal?                @db.Decimal(5, 2)
+  motivo      String?                 @db.Text
+  criadoEm    DateTime                @default(now())
+
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+
+  pedidoId String
+  pedido   Pedido @relation(fields: [pedidoId], references: [id])
+
+  solicitanteId String
+  solicitante   Usuario @relation("AprovacaoSolicitante", fields: [solicitanteId], references: [id])
+
+  aprovadorId String
+  aprovador   Usuario @relation("AprovacaoAprovador", fields: [aprovadorId], references: [id])
+
+  @@map("aprovacoes_gerenciais")
 }

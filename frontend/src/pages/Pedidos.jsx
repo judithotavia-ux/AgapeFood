@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import AdminLayout from '../layouts/AdminLayout';
+import Modal from '../components/Modal';
 import * as pedidoService from '../services/pedidoService';
 import { obterSocket } from '../services/socket';
 import { STATUS_LABEL, STATUS_COR, PROXIMO_STATUS, TIPO_LABEL, PAGAMENTO_LABEL, CANAL_LABEL, fmtPreco } from '../utils/pedidoConstantes';
@@ -25,6 +26,18 @@ export default function Pedidos() {
   const [carregando, setCarregando] = useState(true);
   const [aviso, setAviso] = useState(location.state?.pedidoCriado ? `Pedido #${location.state.pedidoCriado} criado com sucesso!` : '');
   const [linkCopiado, setLinkCopiado] = useState(null);
+
+  const [modalDesconto, setModalDesconto] = useState(null);
+  const [tipoDesconto, setTipoDesconto] = useState('PERCENTUAL');
+  const [valorDesconto, setValorDesconto] = useState('');
+  const [motivoDesconto, setMotivoDesconto] = useState('');
+  const [erroDesconto, setErroDesconto] = useState('');
+  const [enviandoDesconto, setEnviandoDesconto] = useState(false);
+
+  const [modalPin, setModalPin] = useState(null);
+  const [pinInput, setPinInput] = useState('');
+  const [erroPin, setErroPin] = useState('');
+  const [enviandoPin, setEnviandoPin] = useState(false);
 
   async function carregar() {
     setCarregando(true);
@@ -56,10 +69,73 @@ export default function Pedidos() {
     carregar();
   }
 
-  async function cancelar(pedido) {
+  async function executarCancelar(pedido, pinAprovador) {
+    try {
+      await pedidoService.cancelarPedido(pedido.id, pinAprovador ? { pinAprovador } : {});
+      setModalPin(null);
+      setPinInput('');
+      carregar();
+    } catch (e) {
+      if (e.response?.data?.requerAprovacao && !pinAprovador) {
+        setErroPin('');
+        setModalPin({ tipo: 'cancelar', pedido });
+      } else if (pinAprovador) {
+        setErroPin(e.response?.data?.erro || 'PIN inválido.');
+      } else {
+        alert(e.response?.data?.erro || 'Não foi possível cancelar.');
+      }
+    }
+  }
+
+  function cancelar(pedido) {
     if (!confirm(`Cancelar o pedido #${pedido.numero}?`)) return;
-    await pedidoService.cancelarPedido(pedido.id);
-    carregar();
+    executarCancelar(pedido, null);
+  }
+
+  function abrirModalDesconto(pedido) {
+    setModalDesconto(pedido);
+    setTipoDesconto('PERCENTUAL');
+    setValorDesconto('');
+    setMotivoDesconto('');
+    setErroDesconto('');
+  }
+
+  async function executarDesconto(pinAprovador) {
+    setEnviandoDesconto(true);
+    setErroDesconto('');
+    try {
+      await pedidoService.aplicarDescontoPedido(modalDesconto.id, {
+        tipo: tipoDesconto,
+        valor: Number(valorDesconto),
+        motivo: motivoDesconto || undefined,
+        ...(pinAprovador ? { pinAprovador } : {})
+      });
+      setModalDesconto(null);
+      setModalPin(null);
+      setPinInput('');
+      carregar();
+    } catch (e) {
+      if (e.response?.data?.requerAprovacao && !pinAprovador) {
+        setErroPin('');
+        setModalPin({ tipo: 'desconto' });
+      } else if (pinAprovador) {
+        setErroPin(e.response?.data?.erro || 'PIN inválido.');
+      } else {
+        setErroDesconto(e.response?.data?.erro || 'Não foi possível aplicar o desconto.');
+      }
+    } finally {
+      setEnviandoDesconto(false);
+    }
+  }
+
+  async function confirmarPin() {
+    setEnviandoPin(true);
+    if (modalPin.tipo === 'cancelar') {
+      await executarCancelar(modalPin.pedido, pinInput);
+    } else {
+      await executarDesconto(pinInput);
+    }
+    setEnviandoPin(false);
   }
 
   async function copiarLinkAvaliacao(pedido) {
@@ -121,7 +197,10 @@ export default function Pedidos() {
                 </button>
               ))}
               {!['ENTREGUE', 'CANCELADO'].includes(p.status) && (
-                <button style={{ background: 'none', border: 'none', color: 'var(--erro)', fontSize: 11.5, cursor: 'pointer' }} onClick={() => cancelar(p)}>Cancelar</button>
+                <>
+                  <button style={{ background: 'none', border: 'none', color: 'var(--dourado)', fontSize: 11.5, cursor: 'pointer' }} onClick={() => abrirModalDesconto(p)}>% Desconto</button>
+                  <button style={{ background: 'none', border: 'none', color: 'var(--erro)', fontSize: 11.5, cursor: 'pointer' }} onClick={() => cancelar(p)}>Cancelar</button>
+                </>
               )}
               {p.status === 'ENTREGUE' && (
                 <button style={{ background: 'none', border: 'none', color: 'var(--dourado)', fontSize: 11.5, cursor: 'pointer' }} onClick={() => copiarLinkAvaliacao(p)}>
@@ -132,6 +211,44 @@ export default function Pedidos() {
           </div>
         </div>
       ))}
+
+      <Modal titulo={`Aplicar desconto — Pedido #${modalDesconto?.numero || ''}`} aberto={!!modalDesconto} onFechar={() => setModalDesconto(null)}>
+        {modalDesconto && (
+          <form onSubmit={(e) => { e.preventDefault(); executarDesconto(null); }}>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+              <button type="button" className="ans-btn" style={tipoDesconto === 'PERCENTUAL' ? { background: 'var(--dourado)', color: '#16130a', borderColor: 'var(--dourado)' } : {}} onClick={() => setTipoDesconto('PERCENTUAL')}>% Percentual</button>
+              <button type="button" className="ans-btn" style={tipoDesconto === 'VALOR' ? { background: 'var(--dourado)', color: '#16130a', borderColor: 'var(--dourado)' } : {}} onClick={() => setTipoDesconto('VALOR')}>R$ Valor fixo</button>
+            </div>
+            <label>{tipoDesconto === 'PERCENTUAL' ? 'Percentual de desconto' : 'Valor do desconto (R$)'}</label>
+            <input type="number" min="0" step="0.01" value={valorDesconto} onChange={(e) => setValorDesconto(e.target.value)} required autoFocus style={{ marginBottom: 12 }} />
+            <label>Motivo (opcional)</label>
+            <input type="text" value={motivoDesconto} onChange={(e) => setMotivoDesconto(e.target.value)} placeholder="Ex: cliente fidelizado" style={{ marginBottom: 12 }} />
+            <div style={{ fontSize: 12, color: 'var(--texto2)', marginBottom: 12 }}>Total atual do pedido: {fmtPreco(modalDesconto.valorTotal)}</div>
+            {erroDesconto && <div className="erro-msg" style={{ marginBottom: 12 }}>{erroDesconto}</div>}
+            <button type="submit" className="btn" style={{ width: '100%' }} disabled={enviandoDesconto}>{enviandoDesconto ? 'Aplicando…' : 'Aplicar desconto'}</button>
+          </form>
+        )}
+      </Modal>
+
+      <Modal titulo="Aprovação necessária" aberto={!!modalPin} onFechar={() => { setModalPin(null); setPinInput(''); setErroPin(''); }} largura={360}>
+        {modalPin && (
+          <form onSubmit={(e) => { e.preventDefault(); confirmarPin(); }}>
+            <p style={{ fontSize: 13, color: 'var(--texto2)', marginBottom: 14 }}>
+              {modalPin.tipo === 'cancelar'
+                ? 'Você não tem permissão pra cancelar este pedido. Peça o PIN de um gerente pra aprovar.'
+                : 'Esse desconto passa do seu limite. Peça o PIN de um gerente pra aprovar.'}
+            </p>
+            <label>PIN do gerente</label>
+            <input
+              type="password" inputMode="numeric" pattern="[0-9]*" maxLength={6}
+              value={pinInput} onChange={(e) => setPinInput(e.target.value.replace(/\D/g, ''))}
+              required autoFocus style={{ marginBottom: 12, textAlign: 'center', letterSpacing: '.3em', fontSize: 20 }}
+            />
+            {erroPin && <div className="erro-msg" style={{ marginBottom: 12 }}>{erroPin}</div>}
+            <button type="submit" className="btn" style={{ width: '100%' }} disabled={enviandoPin}>{enviandoPin ? 'Verificando…' : 'Confirmar'}</button>
+          </form>
+        )}
+      </Modal>
     </AdminLayout>
   );
 }

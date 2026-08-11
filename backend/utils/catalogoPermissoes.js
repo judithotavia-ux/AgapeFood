@@ -19,7 +19,8 @@ const CATALOGO = [
 
   { chave: 'caixa.visualizar', modulo: 'caixa', acao: 'visualizar', descricao: 'Ver o caixa' },
   { chave: 'caixa.abrir_fechar', modulo: 'caixa', acao: 'abrir_fechar', descricao: 'Abrir e fechar caixa' },
-  { chave: 'caixa.aplicar_desconto', modulo: 'caixa', acao: 'aplicar_desconto', descricao: 'Aplicar desconto em pedidos' },
+  { chave: 'caixa.aplicar_desconto', modulo: 'caixa', acao: 'aplicar_desconto', descricao: 'Aplicar desconto em pedidos, dentro do limite do seu papel' },
+  { chave: 'caixa.aprovar_excecao', modulo: 'caixa', acao: 'aprovar_excecao', descricao: 'Aprovar (via PIN) desconto ou cancelamento acima do limite de outro usuario' },
   { chave: 'caixa.cancelar_pedido', modulo: 'caixa', acao: 'cancelar_pedido', descricao: 'Cancelar pedido a partir do caixa' },
   { chave: 'caixa.estornar', modulo: 'caixa', acao: 'estornar', descricao: 'Estornar pagamento' },
 
@@ -79,7 +80,7 @@ const DEFAULTS_POR_PAPEL = {
     'pedidos.visualizar', 'pedidos.criar', 'pedidos.editar',
     'cardapio.visualizar',
     'salao.visualizar', 'salao.gerenciar',
-    'caixa.visualizar', 'caixa.abrir_fechar',
+    'caixa.visualizar', 'caixa.abrir_fechar', 'caixa.aplicar_desconto',
     'cozinha.visualizar', 'cozinha.gerenciar',
     'delivery.visualizar', 'delivery.gerenciar',
     'estoque.visualizar',

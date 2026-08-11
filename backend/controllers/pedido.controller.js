@@ -2,6 +2,8 @@ const prisma = require('../prisma/client');
 const { emitirParaEmpresa } = require('../realtime/socket');
 const { criarJobsParaPedido, criarJobCancelamento } = require('../services/impressao.service');
 const { normalizarTelefone } = require('../utils/telefone');
+const { temPermissao } = require('../utils/permissoes');
+const { descontoDentroDoLimite, encontrarAprovadorPeloPin, registrarAprovacao } = require('../utils/aprovacaoGerencial');
 
 const PROXIMO_STATUS = {
   RECEBIDO: ['PREPARANDO', 'CANCELADO'],
@@ -246,18 +248,94 @@ async function atualizarStatus(req, res) {
 
 async function cancelar(req, res) {
   const { id } = req.params;
-  const { motivo } = req.body || {};
+  const { motivo, pinAprovador } = req.body || {};
   const pedido = await prisma.pedido.findFirst({ where: { id, empresaId: req.usuario.empresaId } });
   if (!pedido) return res.status(404).json({ erro: 'Pedido não encontrado.' });
   if (['ENTREGUE', 'CANCELADO'].includes(pedido.status)) {
     return res.status(400).json({ erro: 'Este pedido não pode mais ser cancelado.' });
   }
 
+  let aprovador = null;
+  if (!(await temPermissao(req.usuario, 'pedidos.cancelar'))) {
+    aprovador = await encontrarAprovadorPeloPin(req.usuario.empresaId, pinAprovador);
+    if (!aprovador) {
+      return res.status(403).json({ erro: 'Você não tem permissão para cancelar. Peça o PIN de um gerente.', requerAprovacao: true });
+    }
+  }
+
   const atualizado = await prisma.pedido.update({ where: { id }, data: { status: 'CANCELADO' } });
+
+  if (aprovador) {
+    await registrarAprovacao({
+      empresaId: req.usuario.empresaId,
+      pedidoId: id,
+      solicitanteId: req.usuario.id,
+      aprovadorId: aprovador.id,
+      tipo: 'CANCELAMENTO',
+      valorAntes: pedido.valorTotal,
+      valorDepois: pedido.valorTotal,
+      motivo
+    });
+  }
+
   emitirParaEmpresa(req.usuario.empresaId, 'pedido:atualizado', atualizado);
   res.json(atualizado);
 
   criarJobCancelamento(atualizado, motivo).catch((erro) => console.error('Falha ao criar job de cancelamento:', erro));
 }
 
-module.exports = { listar, obter, criar, atualizarStatus, cancelar, criarPedidoCore, ErroPedido };
+async function aplicarDesconto(req, res) {
+  const { id } = req.params;
+  const { tipo, valor, motivo, pinAprovador } = req.body || {};
+
+  if (!['PERCENTUAL', 'VALOR'].includes(tipo)) return res.status(400).json({ erro: 'Tipo de desconto inválido.' });
+  const valorNum = Number(valor);
+  if (isNaN(valorNum) || valorNum <= 0) return res.status(400).json({ erro: 'Informe um valor de desconto válido.' });
+  if (tipo === 'PERCENTUAL' && valorNum > 100) return res.status(400).json({ erro: 'O percentual não pode passar de 100%.' });
+
+  const pedido = await prisma.pedido.findFirst({ where: { id, empresaId: req.usuario.empresaId } });
+  if (!pedido) return res.status(404).json({ erro: 'Pedido não encontrado.' });
+  if (['ENTREGUE', 'CANCELADO'].includes(pedido.status)) {
+    return res.status(400).json({ erro: 'Este pedido não pode mais receber desconto.' });
+  }
+
+  const valorAtual = Number(pedido.valorTotal);
+  const descontoCalculado = tipo === 'PERCENTUAL' ? valorAtual * (valorNum / 100) : valorNum;
+  const descontoAplicado = Math.min(Math.round(descontoCalculado * 100) / 100, valorAtual);
+  const percentualEquivalente = valorAtual > 0 ? Math.round((descontoAplicado / valorAtual) * 10000) / 100 : 0;
+
+  const dentroDoLimite = await descontoDentroDoLimite(req.usuario, { percentual: percentualEquivalente, valor: descontoAplicado });
+
+  let aprovador = null;
+  if (!dentroDoLimite) {
+    aprovador = await encontrarAprovadorPeloPin(req.usuario.empresaId, pinAprovador);
+    if (!aprovador) {
+      return res.status(403).json({ erro: 'Esse desconto passa do seu limite. Peça o PIN de um gerente pra aprovar.', requerAprovacao: true });
+    }
+  }
+
+  const novoValorTotal = Math.round((valorAtual - descontoAplicado) * 100) / 100;
+  const novoValorDesconto = Math.round((Number(pedido.valorDesconto) + descontoAplicado) * 100) / 100;
+
+  const atualizado = await prisma.pedido.update({
+    where: { id },
+    data: { valorTotal: novoValorTotal, valorDesconto: novoValorDesconto }
+  });
+
+  await registrarAprovacao({
+    empresaId: req.usuario.empresaId,
+    pedidoId: id,
+    solicitanteId: req.usuario.id,
+    aprovadorId: aprovador ? aprovador.id : req.usuario.id,
+    tipo: 'DESCONTO',
+    valorAntes: valorAtual,
+    valorDepois: novoValorTotal,
+    percentual: percentualEquivalente,
+    motivo
+  });
+
+  emitirParaEmpresa(req.usuario.empresaId, 'pedido:atualizado', atualizado);
+  res.json(atualizado);
+}
+
+module.exports = { listar, obter, criar, atualizarStatus, cancelar, aplicarDesconto, criarPedidoCore, ErroPedido };

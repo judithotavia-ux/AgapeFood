@@ -116,4 +116,28 @@ async function redefinirSenha(req, res) {
   res.json({ mensagem: 'Senha redefinida com sucesso. Você já pode entrar com a nova senha.' });
 }
 
-module.exports = { login, me, gerarToken, esqueciSenha, redefinirSenha };
+async function definirPin(req, res) {
+  const { pin, senhaAtual } = req.body || {};
+  if (!pin || !/^\d{4,6}$/.test(String(pin))) return res.status(400).json({ erro: 'O PIN deve ter de 4 a 6 dígitos numéricos.' });
+  if (!senhaAtual) return res.status(400).json({ erro: 'Informe sua senha atual para confirmar.' });
+
+  const usuario = await prisma.usuario.findUnique({ where: { id: req.usuario.id } });
+  const senhaValida = await bcrypt.compare(senhaAtual, usuario.senhaHash);
+  if (!senhaValida) return res.status(401).json({ erro: 'Senha atual incorreta.' });
+
+  const pinHash = await bcrypt.hash(String(pin), 10);
+  await prisma.usuario.update({ where: { id: usuario.id }, data: { pinHash } });
+  res.json({ mensagem: 'PIN definido com sucesso.' });
+}
+
+async function removerPin(req, res) {
+  await prisma.usuario.update({ where: { id: req.usuario.id }, data: { pinHash: null } });
+  res.json({ mensagem: 'PIN removido.' });
+}
+
+async function statusPin(req, res) {
+  const usuario = await prisma.usuario.findUnique({ where: { id: req.usuario.id }, select: { pinHash: true } });
+  res.json({ pinDefinido: !!usuario.pinHash });
+}
+
+module.exports = { login, me, gerarToken, esqueciSenha, redefinirSenha, definirPin, removerPin, statusPin };
