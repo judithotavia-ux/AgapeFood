@@ -29,6 +29,7 @@ import EsqueciSenha from './pages/EsqueciSenha';
 import RedefinirSenha from './pages/RedefinirSenha';
 import EquipeGarcons from './pages/EquipeGarcons';
 import FechamentoGorjetas from './pages/FechamentoGorjetas';
+import MeuDesempenho from './pages/MeuDesempenho';
 
 export default function App() {
   return (
@@ -176,6 +177,14 @@ export default function App() {
             element={
               <RotaProtegida>
                 <EquipeGarcons />
+              </RotaProtegida>
+            }
+          />
+          <Route
+            path="/meu-desempenho"
+            element={
+              <RotaProtegida>
+                <MeuDesempenho />
               </RotaProtegida>
             }
           />

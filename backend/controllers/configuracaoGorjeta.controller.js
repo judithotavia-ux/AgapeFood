@@ -15,7 +15,11 @@ function normalizarOpcoes(valor) {
 }
 
 async function obter(req, res) {
-  const config = await obterOuCriar(req.usuario.empresaId);
+  await obterOuCriar(req.usuario.empresaId);
+  const config = await prisma.configuracaoGorjeta.findUnique({
+    where: { empresaId: req.usuario.empresaId },
+    include: { atualizadoPor: { select: { nome: true } } }
+  });
   res.json({ ...config, opcoesPercentual: JSON.parse(config.opcoesPercentual) });
 }
 
@@ -54,7 +58,8 @@ async function atualizar(req, res) {
       opcoesPercentual: opcoesJson !== undefined ? opcoesJson : undefined,
       permitirValorFixo: permitirValorFixo !== undefined ? Boolean(permitirValorFixo) : undefined,
       modeloDistribuicao: modeloDistribuicao !== undefined ? modeloDistribuicao : undefined,
-      regraRateio: regraRateio !== undefined ? regraRateio : undefined
+      regraRateio: regraRateio !== undefined ? regraRateio : undefined,
+      atualizadoPorId: req.usuario.id
     }
   });
 

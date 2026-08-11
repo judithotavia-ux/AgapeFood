@@ -240,4 +240,118 @@ async function marcarPago(req, res) {
   res.json(atualizada);
 }
 
-module.exports = { preview, confirmar, listar, obter, cancelar, marcarPago };
+async function dashboard(req, res) {
+  const empresaId = req.usuario.empresaId;
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  const inicioSemana = new Date(Date.now() - 7 * 86400000);
+  const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+
+  const [pedidosHoje, pedidosSemana, pedidosMes, distribuicoes] = await Promise.all([
+    prisma.pedido.findMany({ where: { empresaId, criadoEm: { gte: hoje }, status: { not: 'CANCELADO' } }, select: { gorjetaValor: true } }),
+    prisma.pedido.findMany({ where: { empresaId, criadoEm: { gte: inicioSemana }, status: { not: 'CANCELADO' } }, select: { gorjetaValor: true } }),
+    prisma.pedido.findMany({ where: { empresaId, criadoEm: { gte: inicioMes }, status: { not: 'CANCELADO' } }, select: { valorTotal: true, gorjetaValor: true, garcomId: true } }),
+    prisma.distribuicaoGorjeta.findMany({
+      where: { fechamento: { empresaId } },
+      select: { valor: true, status: true, garcomId: true, garcom: { select: { nome: true, nomeExibicao: true } } }
+    })
+  ]);
+
+  const somar = (lista, campo) => lista.reduce((s, i) => s + Number(i[campo]), 0);
+
+  const porGarcomVendas = new Map();
+  const porGarcomGorjeta = new Map();
+  const nomesGarcom = new Map();
+  for (const p of pedidosMes) {
+    if (!p.garcomId) continue;
+    porGarcomVendas.set(p.garcomId, (porGarcomVendas.get(p.garcomId) || 0) + Number(p.valorTotal));
+    porGarcomGorjeta.set(p.garcomId, (porGarcomGorjeta.get(p.garcomId) || 0) + Number(p.gorjetaValor));
+  }
+  for (const d of distribuicoes) nomesGarcom.set(d.garcomId, d.garcom.nomeExibicao || d.garcom.nome);
+
+  const idsSemNome = new Set([...porGarcomVendas.keys(), ...porGarcomGorjeta.keys()].filter((id) => !nomesGarcom.has(id)));
+  if (idsSemNome.size > 0) {
+    const garcons = await prisma.usuario.findMany({
+      where: { id: { in: [...idsSemNome] } },
+      select: { id: true, nome: true, nomeExibicao: true }
+    });
+    for (const g of garcons) nomesGarcom.set(g.id, g.nomeExibicao || g.nome);
+  }
+
+  function topDe(mapa) {
+    let melhorId = null, melhorValor = -1;
+    for (const [id, valor] of mapa) {
+      if (valor > melhorValor) { melhorValor = valor; melhorId = id; }
+    }
+    return melhorId ? { garcomId: melhorId, nome: nomesGarcom.get(melhorId) || null, valor: Math.round(melhorValor * 100) / 100 } : null;
+  }
+
+  res.json({
+    gorjetasHoje: Math.round(somar(pedidosHoje, 'gorjetaValor') * 100) / 100,
+    gorjetasSemana: Math.round(somar(pedidosSemana, 'gorjetaValor') * 100) / 100,
+    gorjetasMes: Math.round(somar(pedidosMes, 'gorjetaValor') * 100) / 100,
+    totalPendente: Math.round(distribuicoes.filter((d) => d.status === 'PENDENTE').reduce((s, d) => s + Number(d.valor), 0) * 100) / 100,
+    totalPago: Math.round(distribuicoes.filter((d) => d.status === 'PAGO').reduce((s, d) => s + Number(d.valor), 0) * 100) / 100,
+    ticketMedioMes: pedidosMes.length ? Math.round((somar(pedidosMes, 'valorTotal') / pedidosMes.length) * 100) / 100 : 0,
+    topVendedorMes: topDe(porGarcomVendas),
+    topGorjetaMes: topDe(porGarcomGorjeta)
+  });
+}
+
+async function relatorio(req, res) {
+  const { periodoInicio, periodoFim, formato } = req.query;
+  if (!periodoInicio || !periodoFim) return res.status(400).json({ erro: 'Informe o período.' });
+
+  const inicio = new Date(`${periodoInicio}T00:00:00`);
+  const fim = new Date(`${periodoFim}T23:59:59.999`);
+
+  const [pedidos, distribuicoes] = await Promise.all([
+    prisma.pedido.findMany({
+      where: { empresaId: req.usuario.empresaId, criadoEm: { gte: inicio, lte: fim }, status: { not: 'CANCELADO' }, garcomId: { not: null } },
+      select: { valorTotal: true, gorjetaValor: true, garcomId: true, garcom: { select: { nome: true, nomeExibicao: true } } }
+    }),
+    prisma.distribuicaoGorjeta.findMany({
+      where: { fechamento: { empresaId: req.usuario.empresaId, periodoInicio: { gte: inicio }, periodoFim: { lte: fim } } },
+      select: { valor: true, status: true, garcomId: true, garcom: { select: { nome: true, nomeExibicao: true } } }
+    })
+  ]);
+
+  const linhas = new Map();
+  function linha(garcomId, nome) {
+    if (!linhas.has(garcomId)) linhas.set(garcomId, { garcom: nome, vendas: 0, gorjetaGerada: 0, gorjetaRateada: 0, gorjetaPaga: 0, gorjetaPendente: 0 });
+    return linhas.get(garcomId);
+  }
+  for (const p of pedidos) {
+    const l = linha(p.garcomId, p.garcom.nomeExibicao || p.garcom.nome);
+    l.vendas += Number(p.valorTotal);
+    l.gorjetaGerada += Number(p.gorjetaValor);
+  }
+  for (const d of distribuicoes) {
+    const l = linha(d.garcomId, d.garcom.nomeExibicao || d.garcom.nome);
+    l.gorjetaRateada += Number(d.valor);
+    if (d.status === 'PAGO') l.gorjetaPaga += Number(d.valor);
+    if (d.status === 'PENDENTE') l.gorjetaPendente += Number(d.valor);
+  }
+
+  const resultado = [...linhas.values()].map((l) => ({
+    garcom: l.garcom,
+    vendas: Math.round(l.vendas * 100) / 100,
+    gorjetaGerada: Math.round(l.gorjetaGerada * 100) / 100,
+    gorjetaRateada: Math.round(l.gorjetaRateada * 100) / 100,
+    gorjetaPaga: Math.round(l.gorjetaPaga * 100) / 100,
+    gorjetaPendente: Math.round(l.gorjetaPendente * 100) / 100
+  }));
+
+  if (formato === 'csv') {
+    const cabecalho = 'Garcom;Vendas;Gorjeta Gerada;Gorjeta Rateada;Gorjeta Paga;Gorjeta Pendente';
+    const linhasCsv = resultado.map((l) => [l.garcom, l.vendas, l.gorjetaGerada, l.gorjetaRateada, l.gorjetaPaga, l.gorjetaPendente].join(';'));
+    const csv = [cabecalho, ...linhasCsv].join('\n');
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="relatorio-gorjetas-${periodoInicio}-a-${periodoFim}.csv"`);
+    return res.send('﻿' + csv);
+  }
+
+  res.json(resultado);
+}
+
+module.exports = { preview, confirmar, listar, obter, cancelar, marcarPago, dashboard, relatorio };

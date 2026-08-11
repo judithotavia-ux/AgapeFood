@@ -386,6 +386,7 @@ model Usuario {
   pedidosComoGarcom    Pedido[]              @relation("PedidoGarcom")
   distribuicoesGorjeta DistribuicaoGorjeta[] @relation("DistribuicaoGarcom")
   fechamentosGorjetaCriados FechamentoGorjeta[] @relation("FechamentoCriadoPor")
+  configuracoesGorjetaAlteradas ConfiguracaoGorjeta[] @relation("ConfiguracaoGorjetaAlteradaPor")
 
   @@map("usuarios")
 }
@@ -1127,6 +1128,9 @@ model ConfiguracaoGorjeta {
 
   empresaId String  @unique
   empresa   Empresa @relation(fields: [empresaId], references: [id])
+
+  atualizadoPorId String?
+  atualizadoPor   Usuario? @relation("ConfiguracaoGorjetaAlteradaPor", fields: [atualizadoPorId], references: [id])
 
   @@map("configuracoes_gorjeta")
 }

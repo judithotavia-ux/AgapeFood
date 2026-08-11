@@ -15,3 +15,22 @@ export const obterFechamento = (id) => api.get(`/fechamentos-gorjeta/${id}`).the
 export const cancelarFechamento = (id) => api.post(`/fechamentos-gorjeta/${id}/cancelar`).then((r) => r.data);
 export const marcarDistribuicaoPaga = (fechamentoId, distribuicaoId, dados) =>
   api.patch(`/fechamentos-gorjeta/${fechamentoId}/distribuicoes/${distribuicaoId}/pagar`, dados).then((r) => r.data);
+
+export const obterDashboardGorjetas = () => api.get('/fechamentos-gorjeta/dashboard').then((r) => r.data);
+export const obterRelatorioGorjetas = (periodoInicio, periodoFim) =>
+  api.get('/fechamentos-gorjeta/relatorio', { params: { periodoInicio, periodoFim } }).then((r) => r.data);
+
+export async function baixarRelatorioCsv(periodoInicio, periodoFim) {
+  const resposta = await api.get('/fechamentos-gorjeta/relatorio', {
+    params: { periodoInicio, periodoFim, formato: 'csv' },
+    responseType: 'blob'
+  });
+  const url = window.URL.createObjectURL(new Blob([resposta.data]));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `relatorio-gorjetas-${periodoInicio}-a-${periodoFim}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+}

@@ -26,6 +26,11 @@ export default function FechamentoGorjetas() {
   const [periodoFim, setPeriodoFim] = useState(hojeISO());
   const [horasPorGarcom, setHorasPorGarcom] = useState({});
 
+  const [painel, setPainel] = useState(null);
+  const [relatorio, setRelatorio] = useState(null);
+  const [carregandoRelatorio, setCarregandoRelatorio] = useState(false);
+  const [exportando, setExportando] = useState(false);
+
   const [preview, setPreview] = useState(null);
   const [carregandoPreview, setCarregandoPreview] = useState(false);
   const [erroPreview, setErroPreview] = useState('');
@@ -51,7 +56,32 @@ export default function FechamentoGorjetas() {
     setCarregandoLista(false);
   }
 
-  useEffect(() => { carregarBase(); carregarFechamentos(); }, []);
+  async function carregarPainel() {
+    const dados = await fechamentoService.obterDashboardGorjetas();
+    setPainel(dados);
+  }
+
+  useEffect(() => { carregarBase(); carregarFechamentos(); carregarPainel(); }, []);
+
+  async function gerarRelatorio() {
+    setCarregandoRelatorio(true);
+    setRelatorio(null);
+    try {
+      const dados = await fechamentoService.obterRelatorioGorjetas(periodoInicio, periodoFim);
+      setRelatorio(dados);
+    } finally {
+      setCarregandoRelatorio(false);
+    }
+  }
+
+  async function exportarCsv() {
+    setExportando(true);
+    try {
+      await fechamentoService.baixarRelatorioCsv(periodoInicio, periodoFim);
+    } finally {
+      setExportando(false);
+    }
+  }
 
   function definirPeriodoRapido(dias) {
     const fim = new Date();
@@ -118,6 +148,89 @@ export default function FechamentoGorjetas() {
     <AdminLayout titulo="Fechamento de Gorjetas">
       {!detalhe ? (
         <>
+          {painel && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 20 }}>
+              <div className="card">
+                <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--dourado)' }}>{fmtPreco(painel.gorjetasHoje)}</div>
+                <div style={{ fontSize: 11.5, color: 'var(--texto2)' }}>Gorjetas hoje</div>
+              </div>
+              <div className="card">
+                <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--dourado)' }}>{fmtPreco(painel.gorjetasSemana)}</div>
+                <div style={{ fontSize: 11.5, color: 'var(--texto2)' }}>Últimos 7 dias</div>
+              </div>
+              <div className="card">
+                <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--dourado)' }}>{fmtPreco(painel.gorjetasMes)}</div>
+                <div style={{ fontSize: 11.5, color: 'var(--texto2)' }}>Gorjetas no mês</div>
+              </div>
+              <div className="card">
+                <div style={{ fontSize: 18, fontWeight: 700, color: '#e0a020' }}>{fmtPreco(painel.totalPendente)}</div>
+                <div style={{ fontSize: 11.5, color: 'var(--texto2)' }}>Total pendente</div>
+              </div>
+              <div className="card">
+                <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--sucesso)' }}>{fmtPreco(painel.totalPago)}</div>
+                <div style={{ fontSize: 11.5, color: 'var(--texto2)' }}>Total pago</div>
+              </div>
+              <div className="card">
+                <div style={{ fontSize: 15, fontWeight: 700 }}>{painel.topVendedorMes?.nome || '—'}</div>
+                <div style={{ fontSize: 11.5, color: 'var(--texto2)' }}>Quem mais vendeu (mês)</div>
+              </div>
+              <div className="card">
+                <div style={{ fontSize: 15, fontWeight: 700 }}>{painel.topGorjetaMes?.nome || '—'}</div>
+                <div style={{ fontSize: 11.5, color: 'var(--texto2)' }}>Quem mais gerou gorjeta (mês)</div>
+              </div>
+              <div className="card">
+                <div style={{ fontSize: 18, fontWeight: 700 }}>{fmtPreco(painel.ticketMedioMes)}</div>
+                <div style={{ fontSize: 11.5, color: 'var(--texto2)' }}>Ticket médio (mês)</div>
+              </div>
+            </div>
+          )}
+
+          <div className="card" style={{ marginBottom: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <h3 style={{ fontSize: 15, margin: 0 }}>Relatório por garçom</h3>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button className="btn-outline" style={{ fontSize: 12.5, padding: '7px 12px' }} onClick={gerarRelatorio} disabled={carregandoRelatorio}>
+                  {carregandoRelatorio ? 'Gerando…' : 'Gerar relatório do período'}
+                </button>
+                <button className="btn-outline" style={{ fontSize: 12.5, padding: '7px 12px' }} onClick={exportarCsv} disabled={exportando}>
+                  {exportando ? 'Exportando…' : '⬇ Exportar CSV'}
+                </button>
+              </div>
+            </div>
+            {relatorio && (
+              relatorio.length === 0 ? (
+                <div style={{ color: 'var(--texto2)', fontSize: 13 }}>Nenhum dado nesse período.</div>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid var(--borda)', textAlign: 'left' }}>
+                        <th style={{ padding: '8px 6px' }}>Garçom</th>
+                        <th style={{ padding: '8px 6px' }}>Vendas</th>
+                        <th style={{ padding: '8px 6px' }}>Gorjeta gerada</th>
+                        <th style={{ padding: '8px 6px' }}>Gorjeta rateada</th>
+                        <th style={{ padding: '8px 6px' }}>Paga</th>
+                        <th style={{ padding: '8px 6px' }}>Pendente</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {relatorio.map((l, i) => (
+                        <tr key={i} style={{ borderBottom: '1px solid var(--borda)' }}>
+                          <td style={{ padding: '8px 6px' }}>{l.garcom}</td>
+                          <td style={{ padding: '8px 6px' }}>{fmtPreco(l.vendas)}</td>
+                          <td style={{ padding: '8px 6px' }}>{fmtPreco(l.gorjetaGerada)}</td>
+                          <td style={{ padding: '8px 6px' }}>{fmtPreco(l.gorjetaRateada)}</td>
+                          <td style={{ padding: '8px 6px', color: 'var(--sucesso)' }}>{fmtPreco(l.gorjetaPaga)}</td>
+                          <td style={{ padding: '8px 6px', color: '#e0a020' }}>{fmtPreco(l.gorjetaPendente)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )
+            )}
+          </div>
+
           <div className="card" style={{ marginBottom: 20 }}>
             <h3 style={{ fontSize: 15, marginBottom: 14 }}>Novo fechamento</h3>
             <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>

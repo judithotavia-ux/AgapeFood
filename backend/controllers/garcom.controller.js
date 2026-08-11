@@ -121,6 +121,48 @@ async function redefinirSenha(req, res) {
   res.json({ mensagem: 'Senha redefinida com sucesso.' });
 }
 
+async function meuDesempenho(req, res) {
+  const garcomId = req.usuario.id;
+  const empresaId = req.usuario.empresaId;
+
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+
+  const [pedidosHoje, pedidosMes, distribuicoes] = await Promise.all([
+    prisma.pedido.findMany({
+      where: { garcomId, empresaId, criadoEm: { gte: hoje }, status: { not: 'CANCELADO' } },
+      select: { valorTotal: true }
+    }),
+    prisma.pedido.findMany({
+      where: { garcomId, empresaId, criadoEm: { gte: inicioMes }, status: { not: 'CANCELADO' } },
+      select: { id: true, valorTotal: true, gorjetaValor: true, mesaId: true }
+    }),
+    prisma.distribuicaoGorjeta.findMany({
+      where: { garcomId, fechamento: { empresaId } },
+      select: { valor: true, status: true, fechamento: { select: { periodoFim: true } } },
+      orderBy: { criadoEm: 'desc' }
+    })
+  ]);
+
+  const vendasHoje = pedidosHoje.reduce((s, p) => s + Number(p.valorTotal), 0);
+  const vendasMes = pedidosMes.reduce((s, p) => s + Number(p.valorTotal), 0);
+  const mesasAtendidasMes = new Set(pedidosMes.map((p) => p.mesaId).filter(Boolean)).size;
+  const ticketMedioMes = pedidosMes.length ? vendasMes / pedidosMes.length : 0;
+  const gorjetaGeradaMes = pedidosMes.reduce((s, p) => s + Number(p.gorjetaValor), 0);
+  const gorjetaPaga = distribuicoes.filter((d) => d.status === 'PAGO').reduce((s, d) => s + Number(d.valor), 0);
+  const gorjetaPendente = distribuicoes.filter((d) => d.status === 'PENDENTE').reduce((s, d) => s + Number(d.valor), 0);
+  const ultimoFechamento = distribuicoes[0]?.fechamento?.periodoFim || null;
+
+  res.json({
+    vendasHoje, pedidosHoje: pedidosHoje.length,
+    vendasMes, pedidosMes: pedidosMes.length,
+    mesasAtendidasMes, ticketMedioMes,
+    gorjetaGeradaMes, gorjetaPaga, gorjetaPendente,
+    ultimoFechamento
+  });
+}
+
 async function desativar(req, res) {
   const { id } = req.params;
   const existente = await prisma.usuario.findFirst({ where: { id, empresaId: req.usuario.empresaId, papel: 'GARCOM' } });
@@ -134,4 +176,4 @@ async function desativar(req, res) {
   res.json(garcom);
 }
 
-module.exports = { listar, obter, criar, atualizar, redefinirSenha, desativar };
+module.exports = { listar, obter, criar, atualizar, redefinirSenha, desativar, meuDesempenho };
