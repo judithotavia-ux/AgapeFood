@@ -6,7 +6,10 @@ const emailService = require('../services/email.service');
 
 function gerarToken(usuario) {
   return jwt.sign(
-    { id: usuario.id, empresaId: usuario.empresaId, papel: usuario.papel, nome: usuario.nome, email: usuario.email },
+    {
+      id: usuario.id, empresaId: usuario.empresaId, papel: usuario.papel, nome: usuario.nome, email: usuario.email,
+      perfilPersonalizadoId: usuario.perfilPersonalizadoId || null
+    },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
   );

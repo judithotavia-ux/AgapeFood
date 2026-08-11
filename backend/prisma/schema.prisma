@@ -286,6 +286,7 @@ model Empresa {
   fechamentosGorjeta    FechamentoGorjeta[]
   limitesAprovacao      LimiteAprovacao[]
   aprovacoesGerenciais  AprovacaoGerencial[]
+  perfisPersonalizados  PerfilPersonalizado[]
 
   @@map("empresas")
 }
@@ -381,6 +382,9 @@ model Usuario {
 
   empresaId String?
   empresa   Empresa? @relation(fields: [empresaId], references: [id])
+
+  perfilPersonalizadoId String?
+  perfilPersonalizado   PerfilPersonalizado? @relation(fields: [perfilPersonalizadoId], references: [id])
 
   caixasAbertos        Caixa[]               @relation("CaixaAbertoPor")
   caixasFechados       Caixa[]               @relation("CaixaFechadoPor")
@@ -1221,10 +1225,45 @@ model Permissao {
   descricao String
   criadoEm  DateTime @default(now())
 
-  perfisPadrao PerfilPermissaoPadrao[]
+  perfisPadrao       PerfilPermissaoPadrao[]
+  perfisPersonalizados PerfilPersonalizadoPermissao[]
 
   @@index([modulo])
   @@map("permissoes")
+}
+
+// Perfil criado pela propria empresa, com um recorte de permissoes escolhido a dedo. Quando um
+// usuario tem um perfil personalizado atribuido, as permissoes dele passam a vir do perfil, nao
+// mais do papel padrao - o papel (PapelUsuario) continua existindo pra outras regras de negocio
+// (ex: rateio de gorjeta), so a checagem de permissao muda de fonte.
+model PerfilPersonalizado {
+  id           String   @id @default(uuid())
+  nome         String
+  descricao    String?
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+
+  permissoes PerfilPersonalizadoPermissao[]
+  usuarios   Usuario[]
+
+  @@unique([empresaId, nome])
+  @@map("perfis_personalizados")
+}
+
+model PerfilPersonalizadoPermissao {
+  id String @id @default(uuid())
+
+  perfilId String
+  perfil   PerfilPersonalizado @relation(fields: [perfilId], references: [id], onDelete: Cascade)
+
+  permissaoId String
+  permissao   Permissao @relation(fields: [permissaoId], references: [id], onDelete: Cascade)
+
+  @@unique([perfilId, permissaoId])
+  @@map("perfis_personalizados_permissoes")
 }
 
 // Permissoes padrao de cada papel base (SUPER_ADMIN, ADMIN, GERENTE, FUNCIONARIO, GARCOM).

@@ -48,6 +48,8 @@ const configuracaoGorjetaRoutes = require('./routes/configuracaoGorjeta.routes')
 const fechamentoGorjetaRoutes = require('./routes/fechamentoGorjeta.routes');
 const permissaoRoutes = require('./routes/permissao.routes');
 const limiteAprovacaoRoutes = require('./routes/limiteAprovacao.routes');
+const perfilPersonalizadoRoutes = require('./routes/perfilPersonalizado.routes');
+const usuarioRoutes = require('./routes/usuario.routes');
 
 function logErroEstruturado(origem, err, req) {
   console.error(JSON.stringify({
@@ -144,6 +146,8 @@ app.use('/api/configuracao-gorjeta', configuracaoGorjetaRoutes);
 app.use('/api/fechamentos-gorjeta', fechamentoGorjetaRoutes);
 app.use('/api/permissoes', permissaoRoutes);
 app.use('/api/limites-aprovacao', limiteAprovacaoRoutes);
+app.use('/api/perfis-personalizados', perfilPersonalizadoRoutes);
+app.use('/api/usuarios', usuarioRoutes);
 
 app.use((req, res) => res.status(404).json({ erro: 'Rota não encontrada.' }));
 

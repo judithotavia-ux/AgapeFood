@@ -31,6 +31,7 @@ import EquipeGarcons from './pages/EquipeGarcons';
 import FechamentoGorjetas from './pages/FechamentoGorjetas';
 import MeuDesempenho from './pages/MeuDesempenho';
 import AprovacoesGerenciais from './pages/AprovacoesGerenciais';
+import PerfisPersonalizados from './pages/PerfisPersonalizados';
 
 export default function App() {
   return (
@@ -202,6 +203,14 @@ export default function App() {
             element={
               <RotaProtegida>
                 <AprovacoesGerenciais />
+              </RotaProtegida>
+            }
+          />
+          <Route
+            path="/perfis-personalizados"
+            element={
+              <RotaProtegida>
+                <PerfisPersonalizados />
               </RotaProtegida>
             }
           />

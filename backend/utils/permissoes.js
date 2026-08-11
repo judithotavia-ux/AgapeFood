@@ -13,8 +13,19 @@ async function permissoesDoPapel(papel) {
   return new Set(DEFAULTS_POR_PAPEL[papel] || []);
 }
 
+async function permissoesDoPerfilPersonalizado(perfilId) {
+  const vinculos = await prisma.perfilPersonalizadoPermissao.findMany({
+    where: { perfilId },
+    select: { permissao: { select: { chave: true } } }
+  });
+  return new Set(vinculos.map((v) => v.permissao.chave));
+}
+
+// Se o usuario tem um perfil personalizado atribuido, as permissoes vem dele - o papel
+// (PapelUsuario) continua valendo pra outras regras de negocio, so a permissao muda de fonte.
 async function permissoesEfetivas(usuario) {
   if (!usuario?.papel) return new Set();
+  if (usuario.perfilPersonalizadoId) return permissoesDoPerfilPersonalizado(usuario.perfilPersonalizadoId);
   return permissoesDoPapel(usuario.papel);
 }
 
