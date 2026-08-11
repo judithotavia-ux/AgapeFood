@@ -1,15 +1,16 @@
 const express = require('express');
 const { listar, criar, atualizar, marcarComoPago, cancelar, remover } = require('../controllers/contaPagar.controller');
 const { autenticar } = require('../middlewares/auth.middleware');
+const { exigirPermissao } = require('../utils/permissoes');
 
 const router = express.Router();
 
 router.use(autenticar);
-router.get('/', listar);
-router.post('/', criar);
-router.put('/:id', atualizar);
-router.post('/:id/pagar', marcarComoPago);
-router.post('/:id/cancelar', cancelar);
-router.delete('/:id', remover);
+router.get('/', exigirPermissao('financeiro.visualizar'), listar);
+router.post('/', exigirPermissao('financeiro.gerenciar'), criar);
+router.put('/:id', exigirPermissao('financeiro.gerenciar'), atualizar);
+router.post('/:id/pagar', exigirPermissao('financeiro.aprovar_conta'), marcarComoPago);
+router.post('/:id/cancelar', exigirPermissao('financeiro.gerenciar'), cancelar);
+router.delete('/:id', exigirPermissao('financeiro.gerenciar'), remover);
 
 module.exports = router;
