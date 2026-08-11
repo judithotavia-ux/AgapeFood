@@ -252,7 +252,7 @@ async function executarFerramenta(nome, input, ctx) {
     }
     case 'criar_pedido': {
       try {
-        const pedido = await pedidoController.criarPedidoCore(empresaId, usuario.nome, input);
+        const pedido = await pedidoController.criarPedidoCore(empresaId, { id: usuario.id, nome: usuario.nome }, input);
         return {
           resultado: { id: pedido.id, numero: pedido.numero, valorTotal: Number(pedido.valorTotal), status: pedido.status },
           acao: { tipo: 'PEDIDO_CRIADO', referenciaId: pedido.id, detalhe: `Pedido #${pedido.numero}`, clienteId: pedido.clienteId || null }

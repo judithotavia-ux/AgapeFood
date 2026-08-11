@@ -12,6 +12,14 @@ enum PapelUsuario {
   ADMIN
   GERENTE
   FUNCIONARIO
+  GARCOM
+}
+
+enum StatusGarcom {
+  ATIVO
+  INATIVO
+  FERIAS
+  AFASTADO
 }
 
 enum TipoPedido {
@@ -351,6 +359,14 @@ model Usuario {
   telefone       String?
   fotoUrl        String?
 
+  // Campos especificos de garcom (papel = GARCOM)
+  nomeExibicao  String?
+  whatsapp      String?
+  dataAdmissao  DateTime?
+  matricula     String?
+  statusGarcom  StatusGarcom @default(ATIVO)
+  observacoes   String?      @db.Text
+
   empresaId String?
   empresa   Empresa? @relation(fields: [empresaId], references: [id])
 
@@ -361,6 +377,7 @@ model Usuario {
   printLogs            PrintLog[]
   conversasIA          ConversaIA[]
   tokensResetSenha     TokenResetSenha[]
+  pedidosComoGarcom    Pedido[]              @relation("PedidoGarcom")
 
   @@map("usuarios")
 }
@@ -803,6 +820,8 @@ model Pedido {
   cliente   Cliente? @relation(fields: [clienteId], references: [id])
   cupomId   String?
   cupom     Cupom?   @relation(fields: [cupomId], references: [id])
+  garcomId  String?
+  garcom    Usuario? @relation("PedidoGarcom", fields: [garcomId], references: [id])
 
   itens     PedidoItem[]
   avaliacao Avaliacao?

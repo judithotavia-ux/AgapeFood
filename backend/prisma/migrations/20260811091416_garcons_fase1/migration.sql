@@ -1,0 +1,15 @@
+-- AlterTable
+ALTER TABLE `pedidos` ADD COLUMN `garcomId` VARCHAR(191) NULL;
+
+-- AlterTable
+ALTER TABLE `usuarios` ADD COLUMN `dataAdmissao` DATETIME(3) NULL,
+    ADD COLUMN `matricula` VARCHAR(191) NULL,
+    ADD COLUMN `nomeExibicao` VARCHAR(191) NULL,
+    ADD COLUMN `observacoes` TEXT NULL,
+    ADD COLUMN `statusGarcom` ENUM('ATIVO', 'INATIVO', 'FERIAS', 'AFASTADO') NOT NULL DEFAULT 'ATIVO',
+    ADD COLUMN `whatsapp` VARCHAR(191) NULL,
+    MODIFY `papel` ENUM('SUPER_ADMIN', 'ADMIN', 'GERENTE', 'FUNCIONARIO', 'GARCOM') NOT NULL DEFAULT 'FUNCIONARIO';
+
+-- AddForeignKey
+ALTER TABLE `pedidos` ADD CONSTRAINT `pedidos_garcomId_fkey` FOREIGN KEY (`garcomId`) REFERENCES `usuarios`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+

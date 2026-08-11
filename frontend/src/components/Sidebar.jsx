@@ -6,6 +6,7 @@ const ITENS_ATIVOS = [
   { to: '/central-pedidos', label: 'Central de Pedidos', icone: '🔔' },
   { to: '/pedidos', label: 'Pedidos', icone: '🛒' },
   { to: '/garcons', label: 'Garçons', icone: '🧑‍🍳' },
+  { to: '/equipe-garcons', label: 'Equipe de Garçons', icone: '🪪' },
   { to: '/cardapio', label: 'Cardápio', icone: '🍔' },
   { to: '/cozinha', label: 'Cozinha', icone: '👨‍🍳' },
   { to: '/caixa', label: 'Caixa', icone: '💳' },

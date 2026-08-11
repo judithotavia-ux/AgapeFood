@@ -27,6 +27,7 @@ import AgapeIAChat from './pages/AgapeIAChat';
 import AgapeIADashboard from './pages/AgapeIADashboard';
 import EsqueciSenha from './pages/EsqueciSenha';
 import RedefinirSenha from './pages/RedefinirSenha';
+import EquipeGarcons from './pages/EquipeGarcons';
 
 export default function App() {
   return (
@@ -166,6 +167,14 @@ export default function App() {
             element={
               <RotaProtegida>
                 <Assinatura />
+              </RotaProtegida>
+            }
+          />
+          <Route
+            path="/equipe-garcons"
+            element={
+              <RotaProtegida>
+                <EquipeGarcons />
               </RotaProtegida>
             }
           />

@@ -56,7 +56,7 @@ class ErroPedido extends Error {
   }
 }
 
-async function criarPedidoCore(empresaId, garcomNome, dados) {
+async function criarPedidoCore(empresaId, garcom, dados) {
   const {
     tipo, itens, clienteNome, clienteTelefone, clienteEndereco, formaPagamento, taxaEntrega, observacoes, mesaId,
     canalEntrega, motoboyId, taxaMotoboy, cupomCodigo, origem
@@ -160,7 +160,8 @@ async function criarPedidoCore(empresaId, garcomNome, dados) {
         taxaMotoboy: tipo === 'DELIVERY' && taxaMotoboy !== undefined ? Number(taxaMotoboy) : null,
         clienteId,
         cupomId: cupom?.id || null,
-        garcomNome: tipo === 'MESA' ? garcomNome : null,
+        garcomNome: tipo === 'MESA' ? garcom?.nome || null : null,
+        garcomId: tipo === 'MESA' ? garcom?.id || null : null,
         origemPedido: origem || 'PAINEL',
         itens: { create: itensParaCriar }
       },
@@ -178,7 +179,7 @@ async function criarPedidoCore(empresaId, garcomNome, dados) {
 
 async function criar(req, res) {
   try {
-    const pedido = await criarPedidoCore(req.usuario.empresaId, req.usuario.nome, req.body || {});
+    const pedido = await criarPedidoCore(req.usuario.empresaId, { id: req.usuario.id, nome: req.usuario.nome }, req.body || {});
     res.status(201).json(pedido);
   } catch (erro) {
     if (erro instanceof ErroPedido) return res.status(erro.status).json({ erro: erro.erro });
