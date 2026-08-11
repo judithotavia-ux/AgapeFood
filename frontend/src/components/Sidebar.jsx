@@ -10,6 +10,7 @@ const ITENS_ATIVOS = [
   { to: '/fechamento-gorjetas', label: 'Fechamento de Gorjetas', icone: '💰' },
   { to: '/aprovacoes-gerenciais', label: 'Aprovações Gerenciais', icone: '🔐' },
   { to: '/perfis-personalizados', label: 'Perfis Personalizados', icone: '🧩' },
+  { to: '/log-auditoria', label: 'Log de Auditoria', icone: '📜' },
   { to: '/meu-desempenho', label: 'Minhas Vendas e Gorjetas', icone: '📈' },
   { to: '/cardapio', label: 'Cardápio', icone: '🍔' },
   { to: '/cozinha', label: 'Cozinha', icone: '👨‍🍳' },

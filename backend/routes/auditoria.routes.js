@@ -1,5 +1,5 @@
 const express = require('express');
-const { listar, atribuirPerfil, listarSessoes, revogarSessao } = require('../controllers/usuario.controller');
+const { listar } = require('../controllers/auditoria.controller');
 const { autenticar } = require('../middlewares/auth.middleware');
 const { exigirPermissao } = require('../utils/permissoes');
 
@@ -9,8 +9,5 @@ router.use(autenticar);
 router.use(exigirPermissao('equipe.gerenciar_permissoes'));
 
 router.get('/', listar);
-router.put('/:id/perfil-personalizado', atribuirPerfil);
-router.get('/:id/sessoes', listarSessoes);
-router.post('/:id/sessoes/:sessaoId/revogar', revogarSessao);
 
 module.exports = router;

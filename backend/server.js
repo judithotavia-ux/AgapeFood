@@ -51,6 +51,7 @@ const limiteAprovacaoRoutes = require('./routes/limiteAprovacao.routes');
 const perfilPersonalizadoRoutes = require('./routes/perfilPersonalizado.routes');
 const usuarioRoutes = require('./routes/usuario.routes');
 const permissaoTemporariaRoutes = require('./routes/permissaoTemporaria.routes');
+const auditoriaRoutes = require('./routes/auditoria.routes');
 
 function logErroEstruturado(origem, err, req) {
   console.error(JSON.stringify({
@@ -150,6 +151,7 @@ app.use('/api/limites-aprovacao', limiteAprovacaoRoutes);
 app.use('/api/perfis-personalizados', perfilPersonalizadoRoutes);
 app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/permissoes-temporarias', permissaoTemporariaRoutes);
+app.use('/api/auditoria', auditoriaRoutes);
 
 app.use((req, res) => res.status(404).json({ erro: 'Rota não encontrada.' }));
 

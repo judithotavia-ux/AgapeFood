@@ -2,8 +2,62 @@ import { useEffect, useState } from 'react';
 import AdminLayout from '../layouts/AdminLayout';
 import { useAuth } from '../context/AuthContext';
 import * as aprovacaoService from '../services/aprovacaoService';
+import * as sessaoService from '../services/sessaoService';
 
 const PAPEL_LABEL = { FUNCIONARIO: 'Funcionário', GARCOM: 'Garçom' };
+
+function fmtDataHora(iso) {
+  return new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+}
+
+function descreverDispositivo(userAgent) {
+  if (!userAgent) return 'Dispositivo desconhecido';
+  if (/Mobile|Android|iPhone/i.test(userAgent)) return 'Celular';
+  if (/Tablet|iPad/i.test(userAgent)) return 'Tablet';
+  return 'Computador';
+}
+
+function SecaoSessoes() {
+  const [sessoes, setSessoes] = useState([]);
+  const [carregando, setCarregando] = useState(true);
+
+  async function carregar() {
+    setCarregando(true);
+    const dados = await sessaoService.listarMinhasSessoes();
+    setSessoes(dados);
+    setCarregando(false);
+  }
+
+  useEffect(() => { carregar(); }, []);
+
+  async function encerrar(id) {
+    if (!confirm('Encerrar essa sessão? Quem estiver logado nela vai precisar entrar de novo.')) return;
+    await sessaoService.revogarMinhaSessao(id);
+    carregar();
+  }
+
+  return (
+    <div className="card" style={{ marginBottom: 20, maxWidth: 520 }}>
+      <h3 style={{ fontSize: 15, marginBottom: 4 }}>Minhas sessões</h3>
+      <p style={{ fontSize: 12.5, color: 'var(--texto2)', marginBottom: 14 }}>Onde sua conta está logada. Se não reconhecer algum acesso, encerre por aqui.</p>
+      {carregando ? <p style={{ color: 'var(--texto2)' }}>Carregando…</p> : (
+        sessoes.map((s) => (
+          <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid var(--borda)', fontSize: 12.5 }}>
+            <div>
+              <strong>{descreverDispositivo(s.userAgent)}</strong>{s.estaAtual && <span style={{ color: 'var(--sucesso)', marginLeft: 6, fontSize: 11 }}>· sessão atual</span>}
+              <div style={{ color: 'var(--texto2)', fontSize: 11.5 }}>
+                {s.revogadaEm ? 'Encerrada' : `Ativa desde ${fmtDataHora(s.criadoEm)}`}{s.ip ? ` · ${s.ip}` : ''}
+              </div>
+            </div>
+            {!s.revogadaEm && !s.estaAtual && (
+              <button style={{ background: 'none', border: 'none', color: 'var(--erro)', fontSize: 12, cursor: 'pointer' }} onClick={() => encerrar(s.id)}>Encerrar</button>
+            )}
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
 
 function SecaoPin() {
   const { usuario } = useAuth();
@@ -135,6 +189,7 @@ export default function AprovacoesGerenciais() {
     <AdminLayout titulo="Aprovações Gerenciais">
       <p style={{ color: 'var(--texto2)', fontSize: 13.5, marginBottom: 22 }}>Configure o PIN que autoriza exceções e o quanto cada papel pode dar de desconto sem precisar de aprovação.</p>
       <SecaoPin />
+      <SecaoSessoes />
       <SecaoLimites />
     </AdminLayout>
   );

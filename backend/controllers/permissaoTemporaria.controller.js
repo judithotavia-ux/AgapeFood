@@ -1,4 +1,5 @@
 const prisma = require('../prisma/client');
+const { registrarAuditoria } = require('../utils/auditoria');
 
 const SELECAO = {
   id: true, validaAte: true, motivo: true, criadoEm: true, revogadaEm: true,
@@ -45,6 +46,13 @@ async function conceder(req, res) {
     },
     select: SELECAO
   });
+
+  registrarAuditoria({
+    empresaId: req.usuario.empresaId, usuarioId: req.usuario.id, ip: req.ip,
+    acao: 'permissao_temporaria.conceder', entidade: 'PermissaoTemporaria', entidadeId: concessao.id,
+    valorDepois: concessao
+  });
+
   res.status(201).json(concessao);
 }
 
@@ -55,6 +63,13 @@ async function revogar(req, res) {
   if (existente.revogadaEm) return res.status(400).json({ erro: 'Essa concessão já foi revogada.' });
 
   const atualizada = await prisma.permissaoTemporaria.update({ where: { id }, data: { revogadaEm: new Date() }, select: SELECAO });
+
+  registrarAuditoria({
+    empresaId: req.usuario.empresaId, usuarioId: req.usuario.id, ip: req.ip,
+    acao: 'permissao_temporaria.revogar', entidade: 'PermissaoTemporaria', entidadeId: id,
+    valorDepois: atualizada
+  });
+
   res.json(atualizada);
 }
 

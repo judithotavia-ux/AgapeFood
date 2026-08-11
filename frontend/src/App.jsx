@@ -32,6 +32,7 @@ import FechamentoGorjetas from './pages/FechamentoGorjetas';
 import MeuDesempenho from './pages/MeuDesempenho';
 import AprovacoesGerenciais from './pages/AprovacoesGerenciais';
 import PerfisPersonalizados from './pages/PerfisPersonalizados';
+import LogAuditoria from './pages/LogAuditoria';
 
 export default function App() {
   return (
@@ -211,6 +212,14 @@ export default function App() {
             element={
               <RotaProtegida>
                 <PerfisPersonalizados />
+              </RotaProtegida>
+            }
+          />
+          <Route
+            path="/log-auditoria"
+            element={
+              <RotaProtegida>
+                <LogAuditoria />
               </RotaProtegida>
             }
           />

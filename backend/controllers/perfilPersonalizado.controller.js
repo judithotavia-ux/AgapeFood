@@ -1,4 +1,5 @@
 const prisma = require('../prisma/client');
+const { registrarAuditoria } = require('../utils/auditoria');
 
 const SELECAO = {
   id: true, nome: true, descricao: true, criadoEm: true, atualizadoEm: true,
@@ -59,12 +60,19 @@ async function criar(req, res) {
     },
     select: SELECAO
   });
+
+  registrarAuditoria({
+    empresaId: req.usuario.empresaId, usuarioId: req.usuario.id, ip: req.ip,
+    acao: 'perfil_personalizado.criar', entidade: 'PerfilPersonalizado', entidadeId: perfil.id,
+    valorDepois: formatar(perfil)
+  });
+
   res.status(201).json(formatar(perfil));
 }
 
 async function atualizar(req, res) {
   const { id } = req.params;
-  const existente = await prisma.perfilPersonalizado.findFirst({ where: { id, empresaId: req.usuario.empresaId } });
+  const existente = await prisma.perfilPersonalizado.findFirst({ where: { id, empresaId: req.usuario.empresaId }, select: SELECAO });
   if (!existente) return res.status(404).json({ erro: 'Perfil não encontrado.' });
 
   const { nome, descricao, permissoes } = req.body || {};
@@ -89,16 +97,30 @@ async function atualizar(req, res) {
   ]);
 
   const atualizado = await prisma.perfilPersonalizado.findUnique({ where: { id }, select: SELECAO });
+
+  registrarAuditoria({
+    empresaId: req.usuario.empresaId, usuarioId: req.usuario.id, ip: req.ip,
+    acao: 'perfil_personalizado.atualizar', entidade: 'PerfilPersonalizado', entidadeId: id,
+    valorAntes: formatar(existente), valorDepois: formatar(atualizado)
+  });
+
   res.json(formatar(atualizado));
 }
 
 async function remover(req, res) {
   const { id } = req.params;
-  const existente = await prisma.perfilPersonalizado.findFirst({ where: { id, empresaId: req.usuario.empresaId } });
+  const existente = await prisma.perfilPersonalizado.findFirst({ where: { id, empresaId: req.usuario.empresaId }, select: SELECAO });
   if (!existente) return res.status(404).json({ erro: 'Perfil não encontrado.' });
 
   // Usuarios com esse perfil voltam pro comportamento padrao do papel (FK e ON DELETE SET NULL).
   await prisma.perfilPersonalizado.delete({ where: { id } });
+
+  registrarAuditoria({
+    empresaId: req.usuario.empresaId, usuarioId: req.usuario.id, ip: req.ip,
+    acao: 'perfil_personalizado.remover', entidade: 'PerfilPersonalizado', entidadeId: id,
+    valorAntes: formatar(existente)
+  });
+
   res.json({ mensagem: 'Perfil removido. Usuários que tinham esse perfil voltaram ao padrão do papel deles.' });
 }
 

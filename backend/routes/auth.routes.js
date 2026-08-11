@@ -1,5 +1,5 @@
 const express = require('express');
-const { login, me, esqueciSenha, redefinirSenha, definirPin, removerPin, statusPin } = require('../controllers/auth.controller');
+const { login, me, esqueciSenha, redefinirSenha, definirPin, removerPin, statusPin, minhasSessoes, revogarMinhaSessao } = require('../controllers/auth.controller');
 const { autenticar } = require('../middlewares/auth.middleware');
 
 const router = express.Router();
@@ -11,5 +11,7 @@ router.post('/redefinir-senha', redefinirSenha);
 router.get('/meu-pin', autenticar, statusPin);
 router.put('/meu-pin', autenticar, definirPin);
 router.delete('/meu-pin', autenticar, removerPin);
+router.get('/minhas-sessoes', autenticar, minhasSessoes);
+router.post('/minhas-sessoes/:id/revogar', autenticar, revogarMinhaSessao);
 
 module.exports = router;

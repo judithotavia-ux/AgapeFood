@@ -3,12 +3,13 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const prisma = require('../prisma/client');
 const emailService = require('../services/email.service');
+const { invalidarCache } = require('../utils/sessoes');
 
-function gerarToken(usuario) {
+function gerarToken(usuario, jti) {
   return jwt.sign(
     {
       id: usuario.id, empresaId: usuario.empresaId, papel: usuario.papel, nome: usuario.nome, email: usuario.email,
-      perfilPersonalizadoId: usuario.perfilPersonalizadoId || null
+      perfilPersonalizadoId: usuario.perfilPersonalizadoId || null, jti
     },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
@@ -33,9 +34,15 @@ async function login(req, res) {
     return res.status(401).json({ erro: 'E-mail ou senha incorretos.' });
   }
 
-  await prisma.usuario.update({ where: { id: usuario.id }, data: { ultimoLoginEm: new Date() } });
+  const jti = crypto.randomUUID();
+  await prisma.$transaction([
+    prisma.usuario.update({ where: { id: usuario.id }, data: { ultimoLoginEm: new Date() } }),
+    prisma.sessaoUsuario.create({
+      data: { jti, usuarioId: usuario.id, userAgent: req.headers['user-agent'] || null, ip: req.ip || null }
+    })
+  ]);
 
-  const token = gerarToken(usuario);
+  const token = gerarToken(usuario, jti);
 
   return res.json({
     token,
@@ -143,4 +150,24 @@ async function statusPin(req, res) {
   res.json({ pinDefinido: !!usuario.pinHash });
 }
 
-module.exports = { login, me, gerarToken, esqueciSenha, redefinirSenha, definirPin, removerPin, statusPin };
+async function minhasSessoes(req, res) {
+  const sessoes = await prisma.sessaoUsuario.findMany({
+    where: { usuarioId: req.usuario.id },
+    orderBy: { criadoEm: 'desc' },
+    take: 20
+  });
+  res.json(sessoes.map((s) => ({ ...s, estaAtual: s.jti === req.usuario.jti })));
+}
+
+async function revogarMinhaSessao(req, res) {
+  const { id } = req.params;
+  const sessao = await prisma.sessaoUsuario.findFirst({ where: { id, usuarioId: req.usuario.id } });
+  if (!sessao) return res.status(404).json({ erro: 'Sessão não encontrada.' });
+  if (sessao.jti === req.usuario.jti) return res.status(400).json({ erro: 'Não é possível encerrar a sessão que você está usando agora.' });
+
+  await prisma.sessaoUsuario.update({ where: { id }, data: { revogadaEm: new Date() } });
+  invalidarCache(sessao.jti);
+  res.json({ mensagem: 'Sessão encerrada.' });
+}
+
+module.exports = { login, me, gerarToken, esqueciSenha, redefinirSenha, definirPin, removerPin, statusPin, minhasSessoes, revogarMinhaSessao };

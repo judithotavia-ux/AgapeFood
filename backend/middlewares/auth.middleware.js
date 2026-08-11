@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const prisma = require('../prisma/client');
 const { statusEfetivo } = require('../controllers/assinatura.controller');
+const { sessaoValida } = require('../utils/sessoes');
 
 // Rotas que continuam acessiveis mesmo com a assinatura vencida/cancelada - a empresa precisa
 // conseguir ver e pagar a propria fatura mesmo estando bloqueada de usar o resto do sistema.
@@ -20,6 +21,10 @@ async function autenticar(req, res, next) {
     req.usuario = payload;
   } catch (e) {
     return res.status(401).json({ erro: 'Token inválido ou expirado.' });
+  }
+
+  if (!(await sessaoValida(payload.jti))) {
+    return res.status(401).json({ erro: 'Sessão encerrada. Faça login novamente.' });
   }
 
   if (PREFIXOS_LIVRES_DE_ASSINATURA.some((p) => req.baseUrl.startsWith(p)) || !payload.empresaId) {

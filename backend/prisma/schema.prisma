@@ -288,6 +288,7 @@ model Empresa {
   aprovacoesGerenciais  AprovacaoGerencial[]
   perfisPersonalizados  PerfilPersonalizado[]
   permissoesTemporarias PermissaoTemporaria[]
+  logsAuditoria         LogAuditoria[]
 
   @@map("empresas")
 }
@@ -402,6 +403,8 @@ model Usuario {
   aprovacoesConcedidas  AprovacaoGerencial[] @relation("AprovacaoAprovador")
   permissoesTemporariasRecebidas PermissaoTemporaria[] @relation("PermissaoTemporariaUsuario")
   permissoesTemporariasConcedidas PermissaoTemporaria[] @relation("PermissaoTemporariaConcedidaPor")
+  sessoes    SessaoUsuario[]
+  logsAuditoria LogAuditoria[]
 
   @@map("usuarios")
 }
@@ -1260,6 +1263,48 @@ model PermissaoTemporaria {
 
   @@index([usuarioId, revogadaEm, validaAte])
   @@map("permissoes_temporarias")
+}
+
+// Uma linha por login (por "jti" do JWT gerado). Existe pra dar visibilidade de onde a conta esta
+// logada e permitir encerrar uma sessao especifica remotamente - sem isso, um JWT vazado so perde
+// validade quando expira sozinho (ate 7 dias).
+model SessaoUsuario {
+  id            String    @id @default(uuid())
+  jti           String    @unique
+  userAgent     String?   @db.Text
+  ip            String?
+  criadoEm      DateTime  @default(now())
+  ultimoAcessoEm DateTime @default(now())
+  revogadaEm    DateTime?
+
+  usuarioId String
+  usuario   Usuario @relation(fields: [usuarioId], references: [id])
+
+  @@index([usuarioId])
+  @@map("sessoes_usuario")
+}
+
+// Log de auditoria generico das acoes do modulo de permissoes (perfis personalizados, limites de
+// aprovacao, permissoes temporarias, atribuicao de perfil). Nao cobre o app inteiro - modulos
+// fora do escopo de permissoes tem seus proprios rastros pontuais (ex: AprovacaoGerencial).
+model LogAuditoria {
+  id          String   @id @default(uuid())
+  acao        String
+  entidade    String
+  entidadeId  String?
+  valorAntes  Json?
+  valorDepois Json?
+  ip          String?
+  criadoEm    DateTime @default(now())
+
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+
+  usuarioId String?
+  usuario   Usuario? @relation(fields: [usuarioId], references: [id])
+
+  @@index([empresaId, criadoEm])
+  @@map("logs_auditoria")
 }
 
 // Perfil criado pela propria empresa, com um recorte de permissoes escolhido a dedo. Quando um

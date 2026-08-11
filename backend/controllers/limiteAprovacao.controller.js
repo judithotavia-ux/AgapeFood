@@ -1,4 +1,5 @@
 const prisma = require('../prisma/client');
+const { registrarAuditoria } = require('../utils/auditoria');
 
 const PAPEIS_COM_LIMITE = ['FUNCIONARIO', 'GARCOM'];
 
@@ -28,6 +29,8 @@ async function atualizar(req, res) {
     if (isNaN(v) || v < 0) return res.status(400).json({ erro: 'Limite em valor deve ser positivo.' });
   }
 
+  const antes = await prisma.limiteAprovacao.findUnique({ where: { empresaId_papel: { empresaId: req.usuario.empresaId, papel } } });
+
   const registro = await prisma.limiteAprovacao.upsert({
     where: { empresaId_papel: { empresaId: req.usuario.empresaId, papel } },
     update: {
@@ -41,6 +44,13 @@ async function atualizar(req, res) {
       limiteDescontoValor: limiteDescontoValor || null
     }
   });
+
+  registrarAuditoria({
+    empresaId: req.usuario.empresaId, usuarioId: req.usuario.id, ip: req.ip,
+    acao: 'limite_aprovacao.atualizar', entidade: 'LimiteAprovacao', entidadeId: registro.id,
+    valorAntes: antes, valorDepois: registro
+  });
+
   res.json(registro);
 }
 
