@@ -1,5 +1,6 @@
 const prisma = require('../prisma/client');
 const { processarMensagem, ErroAgapeIA } = require('../services/agapeIa.service');
+const { verificarLimiteIA } = require('../utils/limiteIa');
 
 // Estimativa usada para "Tempo Economizado" e "Economia Gerada" no dashboard — não são valores
 // medidos, são uma suposição documentada (minutos que uma interação levaria se feita manualmente
@@ -13,6 +14,16 @@ const TIPOS_ACAO_ESCRITA = ['PEDIDO_CRIADO', 'PROMOCAO_CRIADA', 'CAMPANHA_CRIADA
 async function conversar(req, res) {
   const { texto, conversaId } = req.body || {};
   if (!texto || !texto.trim()) return res.status(400).json({ erro: 'Escreva uma mensagem.' });
+
+  const statusLimite = await verificarLimiteIA(req.usuario.empresaId);
+  if (!statusLimite.permitido) {
+    return res.status(429).json({
+      erro: `Limite mensal de ${statusLimite.limite} mensagens da Ágape IA atingido. Ele é renovado no início do próximo mês.`,
+      limiteIaAtingido: true,
+      limite: statusLimite.limite,
+      usadas: statusLimite.usadas
+    });
+  }
 
   let conversa;
   if (conversaId) {
@@ -142,4 +153,13 @@ async function atualizarTarefa(req, res) {
   res.json(atualizada);
 }
 
-module.exports = { conversar, listarConversas, obterConversa, removerConversa, dashboard, atualizarTarefa };
+async function uso(req, res) {
+  const status = await verificarLimiteIA(req.usuario.empresaId);
+  res.json({
+    limite: status.limite,
+    usadas: status.usadas,
+    restantes: status.limite === null ? null : Math.max(0, status.limite - status.usadas)
+  });
+}
+
+module.exports = { conversar, listarConversas, obterConversa, removerConversa, dashboard, atualizarTarefa, uso };

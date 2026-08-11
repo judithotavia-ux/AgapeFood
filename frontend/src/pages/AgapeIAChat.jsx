@@ -47,6 +47,7 @@ export default function AgapeIAChat() {
   const fimRef = useRef(null);
 
   const [configIA, setConfigIA] = useState(null);
+  const [uso, setUso] = useState(null);
   const [modalConfig, setModalConfig] = useState(false);
   const [chaveInput, setChaveInput] = useState('');
   const [salvandoConfig, setSalvandoConfig] = useState(false);
@@ -64,7 +65,12 @@ export default function AgapeIAChat() {
     setConfigIA(cfg);
   }
 
-  useEffect(() => { carregarConversas(); carregarConfigIA(); }, []);
+  async function carregarUso() {
+    const dados = await agapeIaService.obterUsoIA();
+    setUso(dados);
+  }
+
+  useEffect(() => { carregarConversas(); carregarConfigIA(); carregarUso(); }, []);
 
   function abrirModalConfig() {
     setChaveInput('');
@@ -140,6 +146,7 @@ export default function AgapeIAChat() {
       setConversaId(resposta.conversaId);
       setMensagens((atual) => [...atual, { papel: 'ASSISTENTE', conteudo: resposta.texto, id: `resp-${Date.now()}` }]);
       carregarConversas();
+      carregarUso();
     } catch (err) {
       setErro(err.response?.data?.erro || 'Não foi possível falar com a Ágape IA agora.');
       setMensagens((atual) => atual.slice(0, -1));
@@ -171,6 +178,11 @@ export default function AgapeIAChat() {
           >
             ⚙️ {configIA?.configurada ? 'Chave configurada' : 'Configurar chave'}
           </button>
+          {uso?.limite !== null && uso?.limite !== undefined && (
+            <div style={{ fontSize: 11, color: uso.restantes === 0 ? 'var(--erro)' : 'var(--texto2)', textAlign: 'center' }}>
+              {uso.usadas}/{uso.limite} mensagens este mês
+            </div>
+          )}
           <div className="card" style={{ flex: 1, overflowY: 'auto', padding: 8 }}>
             {carregandoLista && <div style={{ fontSize: 12.5, color: 'var(--texto2)', padding: 10 }}>Carregando…</div>}
             {!carregandoLista && conversas.length === 0 && (

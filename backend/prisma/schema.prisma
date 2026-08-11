@@ -335,6 +335,10 @@ model Plano {
   ordem     Int             @default(0)
   criadoEm  DateTime        @default(now())
 
+  // Quantas mensagens do usuario pra Agape IA cada empresa desse plano pode mandar por mes.
+  // Nulo = sem limite. So importa pra planos que tem acesso a IA (ordem >= 2 hoje).
+  limiteMensagensIA Int?
+
   assinaturas Assinatura[]
 
   @@map("planos")
