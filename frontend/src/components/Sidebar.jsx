@@ -7,6 +7,7 @@ const ITENS_ATIVOS = [
   { to: '/pedidos', label: 'Pedidos', icone: '🛒' },
   { to: '/garcons', label: 'Garçons', icone: '🧑‍🍳' },
   { to: '/equipe-garcons', label: 'Equipe de Garçons', icone: '🪪' },
+  { to: '/fechamento-gorjetas', label: 'Fechamento de Gorjetas', icone: '💰' },
   { to: '/cardapio', label: 'Cardápio', icone: '🍔' },
   { to: '/cozinha', label: 'Cozinha', icone: '👨‍🍳' },
   { to: '/caixa', label: 'Caixa', icone: '💳' },

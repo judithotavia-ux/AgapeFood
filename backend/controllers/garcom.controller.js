@@ -6,7 +6,8 @@ const STATUS_VALIDOS = ['ATIVO', 'INATIVO', 'FERIAS', 'AFASTADO'];
 const CAMPOS_PUBLICOS = {
   id: true, nome: true, nomeExibicao: true, email: true, cpf: true, telefone: true, whatsapp: true,
   dataNascimento: true, dataAdmissao: true, matricula: true, fotoUrl: true, statusGarcom: true,
-  ativo: true, observacoes: true, criadoEm: true, ultimoLoginEm: true
+  ativo: true, observacoes: true, criadoEm: true, ultimoLoginEm: true,
+  percentualRateioGorjeta: true, pontosGorjeta: true
 };
 
 async function listar(req, res) {
@@ -31,7 +32,7 @@ async function obter(req, res) {
 async function criar(req, res) {
   const {
     nome, nomeExibicao, cpf, telefone, whatsapp, email, dataNascimento, dataAdmissao,
-    matricula, fotoUrl, statusGarcom, observacoes, senha
+    matricula, fotoUrl, statusGarcom, observacoes, senha, percentualRateioGorjeta, pontosGorjeta
   } = req.body || {};
 
   if (!nome || !nome.trim()) return res.status(400).json({ erro: 'Informe o nome completo.' });
@@ -61,6 +62,8 @@ async function criar(req, res) {
       fotoUrl: fotoUrl || null,
       statusGarcom: statusGarcom || 'ATIVO',
       observacoes: observacoes || null,
+      percentualRateioGorjeta: percentualRateioGorjeta !== undefined && percentualRateioGorjeta !== '' ? Number(percentualRateioGorjeta) : null,
+      pontosGorjeta: pontosGorjeta !== undefined && pontosGorjeta !== '' ? Number(pontosGorjeta) : null,
       empresaId: req.usuario.empresaId
     },
     select: CAMPOS_PUBLICOS
@@ -76,7 +79,7 @@ async function atualizar(req, res) {
 
   const {
     nome, nomeExibicao, cpf, telefone, whatsapp, dataNascimento, dataAdmissao,
-    matricula, fotoUrl, statusGarcom, observacoes
+    matricula, fotoUrl, statusGarcom, observacoes, percentualRateioGorjeta, pontosGorjeta
   } = req.body || {};
 
   if (statusGarcom && !STATUS_VALIDOS.includes(statusGarcom)) return res.status(400).json({ erro: 'Status inválido.' });
@@ -95,6 +98,8 @@ async function atualizar(req, res) {
       fotoUrl: fotoUrl !== undefined ? fotoUrl : existente.fotoUrl,
       statusGarcom: statusGarcom !== undefined ? statusGarcom : existente.statusGarcom,
       observacoes: observacoes !== undefined ? observacoes : existente.observacoes,
+      percentualRateioGorjeta: percentualRateioGorjeta !== undefined ? (percentualRateioGorjeta === '' ? null : Number(percentualRateioGorjeta)) : existente.percentualRateioGorjeta,
+      pontosGorjeta: pontosGorjeta !== undefined ? (pontosGorjeta === '' ? null : Number(pontosGorjeta)) : existente.pontosGorjeta,
       ativo: statusGarcom !== undefined ? statusGarcom !== 'INATIVO' : existente.ativo
     },
     select: CAMPOS_PUBLICOS

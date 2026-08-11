@@ -45,6 +45,7 @@ const clienteAuthRoutes = require('./routes/clienteAuth.routes');
 const clientePortalRoutes = require('./routes/clientePortal.routes');
 const garcomRoutes = require('./routes/garcom.routes');
 const configuracaoGorjetaRoutes = require('./routes/configuracaoGorjeta.routes');
+const fechamentoGorjetaRoutes = require('./routes/fechamentoGorjeta.routes');
 
 function logErroEstruturado(origem, err, req) {
   console.error(JSON.stringify({
@@ -138,6 +139,7 @@ app.use('/api/cliente-auth', clienteAuthRoutes);
 app.use('/api/cliente-portal', clientePortalRoutes);
 app.use('/api/garcons', garcomRoutes);
 app.use('/api/configuracao-gorjeta', configuracaoGorjetaRoutes);
+app.use('/api/fechamentos-gorjeta', fechamentoGorjetaRoutes);
 
 app.use((req, res) => res.status(404).json({ erro: 'Rota não encontrada.' }));
 

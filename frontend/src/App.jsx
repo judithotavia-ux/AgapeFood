@@ -28,6 +28,7 @@ import AgapeIADashboard from './pages/AgapeIADashboard';
 import EsqueciSenha from './pages/EsqueciSenha';
 import RedefinirSenha from './pages/RedefinirSenha';
 import EquipeGarcons from './pages/EquipeGarcons';
+import FechamentoGorjetas from './pages/FechamentoGorjetas';
 
 export default function App() {
   return (
@@ -175,6 +176,14 @@ export default function App() {
             element={
               <RotaProtegida>
                 <EquipeGarcons />
+              </RotaProtegida>
+            }
+          />
+          <Route
+            path="/fechamento-gorjetas"
+            element={
+              <RotaProtegida>
+                <FechamentoGorjetas />
               </RotaProtegida>
             }
           />

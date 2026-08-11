@@ -9,7 +9,8 @@ const STATUS_COR = { ATIVO: 'var(--sucesso)', INATIVO: 'var(--texto2)', FERIAS: 
 
 const FORM_VAZIO = {
   nome: '', nomeExibicao: '', cpf: '', telefone: '', whatsapp: '', email: '',
-  dataNascimento: '', dataAdmissao: '', matricula: '', statusGarcom: 'ATIVO', observacoes: '', senha: ''
+  dataNascimento: '', dataAdmissao: '', matricula: '', statusGarcom: 'ATIVO', observacoes: '', senha: '',
+  percentualRateioGorjeta: '', pontosGorjeta: ''
 };
 
 export default function EquipeGarcons() {
@@ -60,7 +61,9 @@ export default function EquipeGarcons() {
         percentualPadrao: configGorjeta.percentualPadrao,
         permitirClienteEscolher: configGorjeta.permitirClienteEscolher,
         permitirValorFixo: configGorjeta.permitirValorFixo,
-        opcoesPercentual: opcoes
+        opcoesPercentual: opcoes,
+        modeloDistribuicao: configGorjeta.modeloDistribuicao,
+        regraRateio: configGorjeta.regraRateio
       });
       setConfigGorjeta({ ...atualizado, opcoesPercentualTexto: atualizado.opcoesPercentual.join(', ') });
       setModalGorjeta(false);
@@ -85,7 +88,8 @@ export default function EquipeGarcons() {
       whatsapp: g.whatsapp || '', email: g.email || '',
       dataNascimento: g.dataNascimento ? g.dataNascimento.slice(0, 10) : '',
       dataAdmissao: g.dataAdmissao ? g.dataAdmissao.slice(0, 10) : '',
-      matricula: g.matricula || '', statusGarcom: g.statusGarcom || 'ATIVO', observacoes: g.observacoes || '', senha: ''
+      matricula: g.matricula || '', statusGarcom: g.statusGarcom || 'ATIVO', observacoes: g.observacoes || '', senha: '',
+      percentualRateioGorjeta: g.percentualRateioGorjeta ?? '', pontosGorjeta: g.pontosGorjeta ?? ''
     });
     setErro('');
     setModalAberto(true);
@@ -245,6 +249,17 @@ export default function EquipeGarcons() {
             </select>
           </div>
 
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
+            <div>
+              <label>Peso no rateio por percentual (%)</label>
+              <input type="number" min="0" max="100" step="0.5" value={form.percentualRateioGorjeta} onChange={(e) => setForm({ ...form, percentualRateioGorjeta: e.target.value })} placeholder="Opcional" />
+            </div>
+            <div>
+              <label>Pontos no rateio por pontos</label>
+              <input type="number" min="0" step="1" value={form.pontosGorjeta} onChange={(e) => setForm({ ...form, pontosGorjeta: e.target.value })} placeholder="Opcional" />
+            </div>
+          </div>
+
           <div style={{ marginTop: 12 }}>
             <label>Observações</label>
             <input value={form.observacoes} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} />
@@ -294,10 +309,30 @@ export default function EquipeGarcons() {
                   </>
                 )}
 
-                <label style={{ display: 'flex', alignItems: 'center', gap: 8, textTransform: 'none', fontSize: 13.5, color: 'var(--texto)', marginBottom: 6, cursor: 'pointer' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, textTransform: 'none', fontSize: 13.5, color: 'var(--texto)', marginBottom: 18, cursor: 'pointer' }}>
                   <input type="checkbox" style={{ width: 'auto' }} checked={configGorjeta.permitirValorFixo} onChange={(e) => setConfigGorjeta({ ...configGorjeta, permitirValorFixo: e.target.checked })} />
                   Permitir gorjeta em valor fixo (em vez de percentual)
                 </label>
+
+                <div style={{ paddingTop: 14, borderTop: '1px solid var(--borda)' }}>
+                  <label>Como as gorjetas são distribuídas entre os garçons</label>
+                  <select value={configGorjeta.modeloDistribuicao} onChange={(e) => setConfigGorjeta({ ...configGorjeta, modeloDistribuicao: e.target.value })} style={{ marginBottom: 14 }}>
+                    <option value="INDIVIDUAL">Individual — cada garçom fica com a gorjeta dos próprios pedidos</option>
+                    <option value="COLETIVO">Coletivo — gorjetas entram num fundo e são rateadas</option>
+                  </select>
+
+                  {configGorjeta.modeloDistribuicao === 'COLETIVO' && (
+                    <>
+                      <label>Regra de rateio do fundo</label>
+                      <select value={configGorjeta.regraRateio} onChange={(e) => setConfigGorjeta({ ...configGorjeta, regraRateio: e.target.value })}>
+                        <option value="IGUAL">Dividir igualmente entre garçons ativos</option>
+                        <option value="PERCENTUAL">Por percentual configurado em cada garçom</option>
+                        <option value="HORAS">Por horas trabalhadas (informadas no fechamento)</option>
+                        <option value="PONTOS">Por pontos configurados em cada garçom</option>
+                      </select>
+                    </>
+                  )}
+                </div>
               </>
             )}
 

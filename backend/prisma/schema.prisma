@@ -283,6 +283,7 @@ model Empresa {
   acoesIA               AcaoIA[]
   tarefasIA             TarefaIA[]
   configuracaoGorjeta   ConfiguracaoGorjeta?
+  fechamentosGorjeta    FechamentoGorjeta[]
 
   @@map("empresas")
 }
@@ -368,6 +369,10 @@ model Usuario {
   statusGarcom  StatusGarcom @default(ATIVO)
   observacoes   String?      @db.Text
 
+  // Pesos padrao usados no rateio coletivo de gorjeta (regra PERCENTUAL / PONTOS)
+  percentualRateioGorjeta Decimal? @db.Decimal(5, 2)
+  pontosGorjeta           Int?
+
   empresaId String?
   empresa   Empresa? @relation(fields: [empresaId], references: [id])
 
@@ -379,6 +384,8 @@ model Usuario {
   conversasIA          ConversaIA[]
   tokensResetSenha     TokenResetSenha[]
   pedidosComoGarcom    Pedido[]              @relation("PedidoGarcom")
+  distribuicoesGorjeta DistribuicaoGorjeta[] @relation("DistribuicaoGarcom")
+  fechamentosGorjetaCriados FechamentoGorjeta[] @relation("FechamentoCriadoPor")
 
   @@map("usuarios")
 }
@@ -829,6 +836,9 @@ model Pedido {
   gorjetaPercentual Decimal? @db.Decimal(5, 2)
   gorjetaValor      Decimal  @default(0) @db.Decimal(10, 2)
 
+  fechamentoGorjetaId String?
+  fechamentoGorjeta   FechamentoGorjeta? @relation(fields: [fechamentoGorjetaId], references: [id])
+
   itens     PedidoItem[]
   avaliacao Avaliacao?
   printJobs PrintJob[]
@@ -1109,6 +1119,9 @@ model ConfiguracaoGorjeta {
   opcoesPercentual        String  @default("[5,10,12,15]")
   permitirValorFixo       Boolean @default(false)
 
+  modeloDistribuicao ModeloDistribuicaoGorjeta @default(INDIVIDUAL)
+  regraRateio        RegraRateioGorjeta        @default(IGUAL)
+
   criadoEm    DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 
@@ -1116,4 +1129,71 @@ model ConfiguracaoGorjeta {
   empresa   Empresa @relation(fields: [empresaId], references: [id])
 
   @@map("configuracoes_gorjeta")
+}
+
+enum ModeloDistribuicaoGorjeta {
+  INDIVIDUAL
+  COLETIVO
+}
+
+enum RegraRateioGorjeta {
+  IGUAL
+  PERCENTUAL
+  HORAS
+  PONTOS
+}
+
+enum StatusFechamentoGorjeta {
+  CONFIRMADO
+  CANCELADO
+}
+
+enum StatusDistribuicaoGorjeta {
+  PENDENTE
+  PAGO
+  CANCELADO
+}
+
+model FechamentoGorjeta {
+  id                 String                    @id @default(uuid())
+  periodoInicio      DateTime
+  periodoFim         DateTime
+  modeloDistribuicao ModeloDistribuicaoGorjeta
+  regraRateio        RegraRateioGorjeta?
+  totalVendido       Decimal                   @db.Decimal(12, 2)
+  totalGorjetas      Decimal                   @db.Decimal(10, 2)
+  status             StatusFechamentoGorjeta   @default(CONFIRMADO)
+  observacao         String?                   @db.Text
+  criadoEm           DateTime                  @default(now())
+  canceladoEm        DateTime?
+
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+
+  criadoPorId String
+  criadoPor   Usuario @relation("FechamentoCriadoPor", fields: [criadoPorId], references: [id])
+
+  distribuicoes DistribuicaoGorjeta[]
+  pedidos       Pedido[]
+
+  @@map("fechamentos_gorjeta")
+}
+
+model DistribuicaoGorjeta {
+  id             String                    @id @default(uuid())
+  valor          Decimal                   @db.Decimal(10, 2)
+  criterioTexto  String?
+  status         StatusDistribuicaoGorjeta @default(PENDENTE)
+  pagoEm         DateTime?
+  formaPagamento String?
+  observacao     String?                   @db.Text
+  criadoEm       DateTime                  @default(now())
+
+  fechamentoId String
+  fechamento   FechamentoGorjeta @relation(fields: [fechamentoId], references: [id], onDelete: Cascade)
+
+  garcomId String
+  garcom   Usuario @relation("DistribuicaoGarcom", fields: [garcomId], references: [id])
+
+  @@map("distribuicoes_gorjeta")
 }
