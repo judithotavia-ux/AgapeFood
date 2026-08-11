@@ -1,10 +1,33 @@
 const bcrypt = require('bcryptjs');
 const path = require('path');
 const fs = require('fs');
+const sharp = require('sharp');
 const prisma = require('../prisma/client');
 const { gerarToken } = require('./auth.controller');
 const { criptografar, descriptografar } = require('../utils/criptografia');
 const { registrarAuditoria } = require('../utils/auditoria');
+
+// Logos enviados costumam vir gigantes (ja vimos um de 2MB nesse sistema pra um espaco de 32px na
+// tela). Redimensiona pra um tamanho generoso o bastante pra qualquer uso (sidebar, cardapio,
+// impressao) sem carregar o arquivo original inteiro. SVG fica de fora - ja e vetor, nao precisa.
+// Sempre converte pra PNG e renomeia o arquivo (nao da pra gravar bytes PNG num arquivo .jpg sem
+// o Content-Type que o servidor manda ficar errado).
+async function otimizarImagemLogo(arquivo) {
+  if (arquivo.mimetype === 'image/svg+xml') return arquivo.filename;
+
+  const caminhoOriginal = arquivo.path;
+  const novoNome = arquivo.filename.replace(path.extname(arquivo.filename), '.png');
+  const novoCaminho = path.join(path.dirname(caminhoOriginal), novoNome);
+
+  try {
+    await sharp(caminhoOriginal).resize({ width: 512, height: 512, fit: 'inside', withoutEnlargement: true }).png().toFile(novoCaminho);
+    if (novoCaminho !== caminhoOriginal) fs.unlink(caminhoOriginal, () => {});
+    return novoNome;
+  } catch (erro) {
+    console.error('Falha ao otimizar imagem de logo (mantendo original):', erro.message);
+    return arquivo.filename;
+  }
+}
 
 const CORES_HEX = /^#[0-9A-Fa-f]{6}$/;
 const CAMPOS_IDENTIDADE_VISUAL = {
@@ -351,7 +374,8 @@ async function atualizarIdentidadeVisual(req, res) {
     const remover = req.body[`remover_${campoArquivo}`];
     if (arquivo) {
       removerArquivoLogoAntigo(existente[campoUrl]);
-      data[campoUrl] = montarUrlLogo(req, arquivo.filename);
+      const nomeOtimizado = await otimizarImagemLogo(arquivo);
+      data[campoUrl] = montarUrlLogo(req, nomeOtimizado);
     } else if (remover === 'true' || remover === true) {
       removerArquivoLogoAntigo(existente[campoUrl]);
       data[campoUrl] = null;
