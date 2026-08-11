@@ -66,7 +66,22 @@ process.on('uncaughtException', (err) => {
 
 const app = express();
 
-app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
+// Alem da URL fixa de producao (CORS_ORIGIN), libera qualquer preview deploy da Vercel
+// deste projeto (ex: agape-food-<hash>-<time>.vercel.app) - a Vercel gera uma URL unica
+// por deploy, entao uma lista fixa de origens quebraria a cada novo deploy.
+const ORIGEM_PRODUCAO = process.env.CORS_ORIGIN;
+const REGEX_PREVIEW_VERCEL = /^https:\/\/agape-food-[\w-]+\.vercel\.app$/;
+
+function origemPermitidaCors(origin, callback) {
+  if (!origin) return callback(null, true);
+  if (!ORIGEM_PRODUCAO) return callback(null, true);
+  if (origin === ORIGEM_PRODUCAO || origin === 'http://localhost:5173' || REGEX_PREVIEW_VERCEL.test(origin)) {
+    return callback(null, true);
+  }
+  callback(new Error('Origem não permitida pelo CORS.'));
+}
+
+app.use(cors({ origin: origemPermitidaCors }));
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
