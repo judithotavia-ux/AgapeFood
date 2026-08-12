@@ -34,7 +34,9 @@ const CAMPOS_IDENTIDADE_VISUAL = {
   id: true, nome: true, slogan: true, logoUrl: true, logoImpressaoUrl: true, logoCardapioUrl: true, logoReciboUrl: true,
   corPrimaria: true, corSecundaria: true, corDestaque: true, corTexto: true, tema: true, exibirMarcaAgapeFood: true,
   exibirLogoCardapio: true, exibirSloganCardapio: true, exibirSloganComanda: true,
-  mensagemAgradecimento: true, rodapeComanda: true
+  mensagemAgradecimento: true, rodapeComanda: true,
+  whatsapp: true, telefone: true, emailContato: true, site: true,
+  instagram: true, facebook: true, tiktok: true, youtube: true
 };
 
 function montarUrlLogo(req, nomeArquivo) {
@@ -335,20 +337,29 @@ async function obterIdentidadeVisual(req, res) {
   res.json(empresa);
 }
 
-async function atualizarIdentidadeVisual(req, res) {
+async function atualizarIdentidadeVisual(req, res, next) {
+ try {
   const empresaId = req.usuario.empresaId;
   const existente = await prisma.empresa.findUnique({ where: { id: empresaId }, select: CAMPOS_IDENTIDADE_VISUAL });
   if (!existente) return res.status(404).json({ erro: 'Empresa não encontrada.' });
 
   const {
     slogan, corPrimaria, corSecundaria, corDestaque, corTexto, tema, exibirMarcaAgapeFood,
-    exibirLogoCardapio, exibirSloganCardapio, exibirSloganComanda, mensagemAgradecimento, rodapeComanda
+    exibirLogoCardapio, exibirSloganCardapio, exibirSloganComanda, mensagemAgradecimento, rodapeComanda,
+    whatsapp, telefone, emailContato, site, instagram, facebook, tiktok, youtube
   } = req.body || {};
 
   for (const [rotulo, valor] of [['corPrimaria', corPrimaria], ['corSecundaria', corSecundaria], ['corDestaque', corDestaque], ['corTexto', corTexto]]) {
     if (valor && !CORES_HEX.test(valor)) return res.status(400).json({ erro: `Cor "${rotulo}" inválida. Use o formato hexadecimal, ex: #D4AF37.` });
   }
   if (tema && !['CLARO', 'ESCURO', 'AUTOMATICO'].includes(tema)) return res.status(400).json({ erro: 'Tema inválido.' });
+
+  for (const [rotulo, valor] of [
+    ['whatsapp', whatsapp], ['telefone', telefone], ['emailContato', emailContato], ['site', site],
+    ['instagram', instagram], ['facebook', facebook], ['tiktok', tiktok], ['youtube', youtube]
+  ]) {
+    if (valor && String(valor).length > 191) return res.status(400).json({ erro: `Campo "${rotulo}" excede o tamanho máximo de 191 caracteres.` });
+  }
 
   const paraBooleano = (valor, atual) => (valor !== undefined ? (valor === 'true' || valor === true) : atual);
 
@@ -364,7 +375,15 @@ async function atualizarIdentidadeVisual(req, res) {
     exibirSloganCardapio: paraBooleano(exibirSloganCardapio, existente.exibirSloganCardapio),
     exibirSloganComanda: paraBooleano(exibirSloganComanda, existente.exibirSloganComanda),
     mensagemAgradecimento: mensagemAgradecimento !== undefined ? (mensagemAgradecimento || null) : existente.mensagemAgradecimento,
-    rodapeComanda: rodapeComanda !== undefined ? (rodapeComanda || null) : existente.rodapeComanda
+    rodapeComanda: rodapeComanda !== undefined ? (rodapeComanda || null) : existente.rodapeComanda,
+    whatsapp: whatsapp !== undefined ? (whatsapp || null) : existente.whatsapp,
+    telefone: telefone !== undefined ? (telefone || null) : existente.telefone,
+    emailContato: emailContato !== undefined ? (emailContato || null) : existente.emailContato,
+    site: site !== undefined ? (site || null) : existente.site,
+    instagram: instagram !== undefined ? (instagram || null) : existente.instagram,
+    facebook: facebook !== undefined ? (facebook || null) : existente.facebook,
+    tiktok: tiktok !== undefined ? (tiktok || null) : existente.tiktok,
+    youtube: youtube !== undefined ? (youtube || null) : existente.youtube
   };
 
   const arquivos = req.files || {};
@@ -391,6 +410,9 @@ async function atualizarIdentidadeVisual(req, res) {
   });
 
   res.json(atualizado);
+ } catch (erro) {
+  next(erro);
+ }
 }
 
 module.exports = {

@@ -110,6 +110,14 @@ export default function IdentidadeVisual() {
     formData.append('exibirSloganComanda', String(dados.exibirSloganComanda !== false));
     formData.append('mensagemAgradecimento', dados.mensagemAgradecimento || '');
     formData.append('rodapeComanda', dados.rodapeComanda || '');
+    formData.append('whatsapp', dados.whatsapp || '');
+    formData.append('telefone', dados.telefone || '');
+    formData.append('emailContato', dados.emailContato || '');
+    formData.append('site', dados.site || '');
+    formData.append('instagram', dados.instagram || '');
+    formData.append('facebook', dados.facebook || '');
+    formData.append('tiktok', dados.tiktok || '');
+    formData.append('youtube', dados.youtube || '');
 
     const mapa = { logo: null, logoImpressao: 'logoImpressaoUrl', logoCardapio: 'logoCardapioUrl', logoRecibo: 'logoReciboUrl' };
     for (const campo of Object.keys(mapa)) {
@@ -189,6 +197,45 @@ export default function IdentidadeVisual() {
             <button type="button" style={{ marginTop: 10, background: dados.corDestaque || dados.corSecundaria || '#000', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: 8, fontSize: 12 }}>
               Botão de exemplo
             </button>
+          </div>
+        </div>
+
+        <div className="card">
+          <h3 style={{ fontSize: 15, marginBottom: 14 }}>Contato e redes sociais</h3>
+          <p style={{ fontSize: 12, color: 'var(--texto2)', marginBottom: 14 }}>Aparecem no rodapé do cardápio digital. O WhatsApp também é usado pro cliente chamar o restaurante direto.</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14 }}>
+            <div>
+              <label>WhatsApp</label>
+              <input type="text" value={dados.whatsapp || ''} onChange={(e) => set('whatsapp', e.target.value)} placeholder="(92) 99999-9999" />
+            </div>
+            <div>
+              <label>Telefone</label>
+              <input type="text" value={dados.telefone || ''} onChange={(e) => set('telefone', e.target.value)} placeholder="(92) 99999-9999" />
+            </div>
+            <div>
+              <label>E-mail de contato</label>
+              <input type="email" value={dados.emailContato || ''} onChange={(e) => set('emailContato', e.target.value)} placeholder="contato@seurestaurante.com" />
+            </div>
+            <div>
+              <label>Site</label>
+              <input type="text" value={dados.site || ''} onChange={(e) => set('site', e.target.value)} placeholder="https://seurestaurante.com" />
+            </div>
+            <div>
+              <label>Instagram</label>
+              <input type="text" value={dados.instagram || ''} onChange={(e) => set('instagram', e.target.value)} placeholder="https://instagram.com/seurestaurante" />
+            </div>
+            <div>
+              <label>Facebook</label>
+              <input type="text" value={dados.facebook || ''} onChange={(e) => set('facebook', e.target.value)} placeholder="https://facebook.com/seurestaurante" />
+            </div>
+            <div>
+              <label>TikTok</label>
+              <input type="text" value={dados.tiktok || ''} onChange={(e) => set('tiktok', e.target.value)} placeholder="https://tiktok.com/@seurestaurante" />
+            </div>
+            <div>
+              <label>YouTube</label>
+              <input type="text" value={dados.youtube || ''} onChange={(e) => set('youtube', e.target.value)} placeholder="https://youtube.com/@seurestaurante" />
+            </div>
           </div>
         </div>
 
