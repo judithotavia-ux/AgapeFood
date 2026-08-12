@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import AdminLayout from '../layouts/AdminLayout';
 import Modal from '../components/Modal';
+import BloqueioPlano from '../components/BloqueioPlano';
 import * as estoqueService from '../services/estoqueService';
 import * as cardapioService from '../services/cardapioService';
 import { TIPO_MOVIMENTACAO_LABEL, TIPOS_ENTRADA, fmtQtd } from '../utils/estoqueConstantes';
@@ -52,6 +53,8 @@ export default function Estoque() {
   const [fornecedores, setFornecedores] = useState([]);
   const [produtos, setProdutos] = useState([]);
   const [carregando, setCarregando] = useState(true);
+  const [bloqueado, setBloqueado] = useState(false);
+  const [planoAtual, setPlanoAtual] = useState(null);
 
   const [modalMov, setModalMov] = useState(false);
   const [produtoIdMov, setProdutoIdMov] = useState('');
@@ -84,15 +87,21 @@ export default function Estoque() {
 
   async function carregar() {
     setCarregando(true);
-    const [r, m, l, f, p] = await Promise.all([
-      estoqueService.obterResumoEstoque(),
-      estoqueService.listarMovimentacoes(),
-      estoqueService.listarLotes(),
-      estoqueService.listarFornecedores(),
-      cardapioService.listarProdutos()
-    ]);
-    setResumo(r); setMovimentacoes(m); setLotes(l); setFornecedores(f); setProdutos(p);
-    setCarregando(false);
+    try {
+      const [r, m, l, f, p] = await Promise.all([
+        estoqueService.obterResumoEstoque(),
+        estoqueService.listarMovimentacoes(),
+        estoqueService.listarLotes(),
+        estoqueService.listarFornecedores(),
+        cardapioService.listarProdutos()
+      ]);
+      setResumo(r); setMovimentacoes(m); setLotes(l); setFornecedores(f); setProdutos(p);
+    } catch (e) {
+      if (e.response?.data?.precisaUpgrade) { setBloqueado(true); setPlanoAtual(e.response.data.planoAtual); }
+      else throw e;
+    } finally {
+      setCarregando(false);
+    }
   }
 
   useEffect(() => { carregar(); }, []);
@@ -171,6 +180,7 @@ export default function Estoque() {
   }
 
   if (carregando) return <AdminLayout titulo="Estoque"><p style={{ color: 'var(--texto2)' }}>Carregando…</p></AdminLayout>;
+  if (bloqueado) return <AdminLayout titulo="Estoque"><BloqueioPlano planoAtual={planoAtual} /></AdminLayout>;
 
   return (
     <AdminLayout titulo="Estoque">

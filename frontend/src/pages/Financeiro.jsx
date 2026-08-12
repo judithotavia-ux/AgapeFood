@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import AdminLayout from '../layouts/AdminLayout';
 import Modal from '../components/Modal';
+import BloqueioPlano from '../components/BloqueioPlano';
 import * as financeiroService from '../services/financeiroService';
 import {
   STATUS_CONTA_LABEL, STATUS_CONTA_COR, FORMA_PAGAMENTO_LABEL, SAUDE_FINANCEIRA_LABEL, fmtPrecoFin, fmtMes
@@ -58,6 +59,8 @@ export default function Financeiro() {
   const [contasReceber, setContasReceber] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [carregando, setCarregando] = useState(true);
+  const [bloqueado, setBloqueado] = useState(false);
+  const [planoAtual, setPlanoAtual] = useState(null);
 
   const [modalPagar, setModalPagar] = useState(false);
   const [descPagar, setDescPagar] = useState('');
@@ -82,14 +85,20 @@ export default function Financeiro() {
 
   async function carregar() {
     setCarregando(true);
-    const [r, cp, cr, cat] = await Promise.all([
-      financeiroService.obterResumoFinanceiro(mes),
-      financeiroService.listarContasPagar(),
-      financeiroService.listarContasReceber(),
-      financeiroService.listarCategoriasFinanceiras()
-    ]);
-    setResumo(r); setContasPagar(cp); setContasReceber(cr); setCategorias(cat);
-    setCarregando(false);
+    try {
+      const [r, cp, cr, cat] = await Promise.all([
+        financeiroService.obterResumoFinanceiro(mes),
+        financeiroService.listarContasPagar(),
+        financeiroService.listarContasReceber(),
+        financeiroService.listarCategoriasFinanceiras()
+      ]);
+      setResumo(r); setContasPagar(cp); setContasReceber(cr); setCategorias(cat);
+    } catch (e) {
+      if (e.response?.data?.precisaUpgrade) { setBloqueado(true); setPlanoAtual(e.response.data.planoAtual); }
+      else throw e;
+    } finally {
+      setCarregando(false);
+    }
   }
 
   useEffect(() => { carregar(); }, [mes]);
@@ -193,6 +202,7 @@ export default function Financeiro() {
     carregar();
   }
 
+  if (bloqueado) return <AdminLayout titulo="Financeiro"><BloqueioPlano planoAtual={planoAtual} /></AdminLayout>;
   if (carregando || !resumo) return <AdminLayout titulo="Financeiro"><p style={{ color: 'var(--texto2)' }}>Carregando…</p></AdminLayout>;
 
   return (

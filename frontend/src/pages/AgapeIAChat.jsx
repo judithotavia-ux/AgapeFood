@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import AdminLayout from '../layouts/AdminLayout';
 import Modal from '../components/Modal';
+import BloqueioPlano from '../components/BloqueioPlano';
 import * as agapeIaService from '../services/agapeIaService';
 
 const SUGESTOES = [
@@ -44,6 +45,8 @@ export default function AgapeIAChat() {
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState('');
   const [carregandoLista, setCarregandoLista] = useState(true);
+  const [bloqueado, setBloqueado] = useState(false);
+  const [planoAtual, setPlanoAtual] = useState(null);
   const fimRef = useRef(null);
 
   const [configIA, setConfigIA] = useState(null);
@@ -55,9 +58,15 @@ export default function AgapeIAChat() {
 
   async function carregarConversas() {
     setCarregandoLista(true);
-    const lista = await agapeIaService.listarConversasIA();
-    setConversas(lista);
-    setCarregandoLista(false);
+    try {
+      const lista = await agapeIaService.listarConversasIA();
+      setConversas(lista);
+    } catch (e) {
+      if (e.response?.data?.precisaUpgrade) { setBloqueado(true); setPlanoAtual(e.response.data.planoAtual); }
+      else throw e;
+    } finally {
+      setCarregandoLista(false);
+    }
   }
 
   async function carregarConfigIA() {
@@ -66,8 +75,12 @@ export default function AgapeIAChat() {
   }
 
   async function carregarUso() {
-    const dados = await agapeIaService.obterUsoIA();
-    setUso(dados);
+    try {
+      const dados = await agapeIaService.obterUsoIA();
+      setUso(dados);
+    } catch {
+      // se estiver bloqueado por plano, carregarConversas ja trata a mensagem - aqui so ignora
+    }
   }
 
   useEffect(() => { carregarConversas(); carregarConfigIA(); carregarUso(); }, []);
@@ -162,6 +175,8 @@ export default function AgapeIAChat() {
       enviar();
     }
   }
+
+  if (bloqueado) return <AdminLayout titulo="Ágape IA"><BloqueioPlano planoAtual={planoAtual} /></AdminLayout>;
 
   return (
     <AdminLayout titulo="Ágape IA">

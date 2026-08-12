@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import AdminLayout from '../layouts/AdminLayout';
+import BloqueioPlano from '../components/BloqueioPlano';
 import * as agapeIaService from '../services/agapeIaService';
 
 const TIPO_ACAO_LABEL = {
@@ -44,12 +45,20 @@ export default function AgapeIADashboard() {
   const [dados, setDados] = useState(null);
   const [dias, setDias] = useState(30);
   const [carregando, setCarregando] = useState(true);
+  const [bloqueado, setBloqueado] = useState(false);
+  const [planoAtual, setPlanoAtual] = useState(null);
 
   async function carregar() {
     setCarregando(true);
-    const d = await agapeIaService.obterDashboardIA(dias);
-    setDados(d);
-    setCarregando(false);
+    try {
+      const d = await agapeIaService.obterDashboardIA(dias);
+      setDados(d);
+    } catch (e) {
+      if (e.response?.data?.precisaUpgrade) { setBloqueado(true); setPlanoAtual(e.response.data.planoAtual); }
+      else throw e;
+    } finally {
+      setCarregando(false);
+    }
   }
 
   useEffect(() => { carregar(); }, [dias]);
@@ -58,6 +67,8 @@ export default function AgapeIADashboard() {
     await agapeIaService.atualizarTarefaIA(id, 'CONCLUIDA');
     carregar();
   }
+
+  if (bloqueado) return <AdminLayout titulo="Ágape IA · Dashboard"><BloqueioPlano planoAtual={planoAtual} /></AdminLayout>;
 
   if (carregando || !dados) {
     return (

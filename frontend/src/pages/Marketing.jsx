@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import AdminLayout from '../layouts/AdminLayout';
 import Modal from '../components/Modal';
+import BloqueioPlano from '../components/BloqueioPlano';
 import * as marketingService from '../services/marketingService';
 import {
   CANAL_LABEL, CANAL_ICONE, STATUS_CAMPANHA_LABEL, SEGMENTO_CLIENTE_LABEL, fmtPrecoMkt, fmtDataMkt
@@ -30,6 +31,8 @@ export default function Marketing() {
   const [campanhas, setCampanhas] = useState([]);
   const [avaliacoes, setAvaliacoes] = useState([]);
   const [carregando, setCarregando] = useState(true);
+  const [bloqueado, setBloqueado] = useState(false);
+  const [planoAtual, setPlanoAtual] = useState(null);
 
   const [cashbackAtual, setCashbackAtual] = useState(0);
   const [cashbackInput, setCashbackInput] = useState('0');
@@ -61,18 +64,24 @@ export default function Marketing() {
 
   async function carregar() {
     setCarregando(true);
-    const [r, cl, cu, ca, av, emp] = await Promise.all([
-      marketingService.obterResumoMarketing(),
-      marketingService.listarClientes(),
-      marketingService.listarCupons(),
-      marketingService.listarCampanhas(),
-      marketingService.listarAvaliacoes(),
-      marketingService.obterMinhaEmpresa()
-    ]);
-    setResumo(r); setClientes(cl); setCupons(cu); setCampanhas(ca); setAvaliacoes(av);
-    setCashbackAtual(Number(emp.percentualCashback));
-    setCashbackInput(String(Number(emp.percentualCashback)));
-    setCarregando(false);
+    try {
+      const [r, cl, cu, ca, av, emp] = await Promise.all([
+        marketingService.obterResumoMarketing(),
+        marketingService.listarClientes(),
+        marketingService.listarCupons(),
+        marketingService.listarCampanhas(),
+        marketingService.listarAvaliacoes(),
+        marketingService.obterMinhaEmpresa()
+      ]);
+      setResumo(r); setClientes(cl); setCupons(cu); setCampanhas(ca); setAvaliacoes(av);
+      setCashbackAtual(Number(emp.percentualCashback));
+      setCashbackInput(String(Number(emp.percentualCashback)));
+    } catch (e) {
+      if (e.response?.data?.precisaUpgrade) { setBloqueado(true); setPlanoAtual(e.response.data.planoAtual); }
+      else throw e;
+    } finally {
+      setCarregando(false);
+    }
   }
 
   useEffect(() => { carregar(); }, []);
@@ -187,6 +196,7 @@ export default function Marketing() {
     }
   }
 
+  if (bloqueado) return <AdminLayout titulo="Marketing"><BloqueioPlano planoAtual={planoAtual} /></AdminLayout>;
   if (carregando || !resumo) return <AdminLayout titulo="Marketing"><p style={{ color: 'var(--texto2)' }}>Carregando…</p></AdminLayout>;
 
   return (
