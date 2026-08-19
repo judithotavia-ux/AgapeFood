@@ -85,7 +85,7 @@ async function esqueciSenha(req, res) {
   const mensagemGenerica = { mensagem: 'Se esse e-mail estiver cadastrado, você vai receber um link para redefinir a senha em instantes.' };
 
   const usuario = await prisma.usuario.findUnique({ where: { email: String(email).toLowerCase().trim() } });
-  if (!usuario || !usuario.ativo) return res.json(mensagemGenerica);
+  if (!usuario || !usuario.ativo) return res.status(404).json({ erro: 'Esse e-mail não está cadastrado no AgapeFood.' });
 
   if (!emailService.configurado()) {
     return res.status(503).json({ erro: 'O envio de e-mail ainda não foi configurado nesta instalação. Fale com o suporte AgapeFood.' });
