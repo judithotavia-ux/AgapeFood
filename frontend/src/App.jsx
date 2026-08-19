@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { AlertaPedidosProvider } from './context/AlertaPedidosContext';
 import RotaProtegida from './components/RotaProtegida';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -42,6 +43,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <AlertaPedidosProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/esqueci-senha" element={<EsqueciSenha />} />
@@ -278,6 +280,7 @@ export default function App() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
+        </AlertaPedidosProvider>
       </AuthProvider>
     </BrowserRouter>
   );

@@ -2,14 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import AdminLayout from '../layouts/AdminLayout';
 import * as pedidoService from '../services/pedidoService';
 import { obterSocket } from '../services/socket';
+import { useAlertaPedidos } from '../context/AlertaPedidosContext';
 import {
   STATUS_LABEL, STATUS_COR, PROXIMO_STATUS, TIPO_LABEL, CANAL_LABEL, fmtPreco
 } from '../utils/pedidoConstantes';
-import {
-  obterVolume, definirVolume, tocarAlertaNovoPedido, tocarAlertaCancelamento,
-  iniciarRepeticao, pararRepeticao, pararTodasRepeticoes,
-  pedirPermissaoNotificacao, obterPermissaoNotificacao, notificarNovoPedido
-} from '../utils/alertas';
+import { obterVolume, definirVolume, pedirPermissaoNotificacao, obterPermissaoNotificacao } from '../utils/alertas';
 
 const STATUS_ATIVOS = ['RECEBIDO', 'PREPARANDO', 'PRONTO', 'SAIU_PARA_ENTREGA'];
 
@@ -25,8 +22,9 @@ function Badge({ status }) {
 }
 
 export default function CentralPedidos() {
+  const { naoReconhecidos: pedidosNaoReconhecidos, reconhecer } = useAlertaPedidos();
+  const naoReconhecidos = pedidosNaoReconhecidos.map((p) => p.id);
   const [pedidos, setPedidos] = useState([]);
-  const [naoReconhecidos, setNaoReconhecidos] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [volume, setVolume] = useState(obterVolume());
   const [permissaoNotif, setPermissaoNotif] = useState(obterPermissaoNotificacao());
@@ -55,9 +53,6 @@ export default function CentralPedidos() {
     function aoReceberNovo(pedido) {
       pedidosRef.current = [pedido, ...pedidosRef.current];
       setPedidos(pedidosRef.current);
-      setNaoReconhecidos((lista) => [...lista, pedido.id]);
-      iniciarRepeticao(pedido.id, tocarAlertaNovoPedido, 15000);
-      notificarNovoPedido(pedido, TIPO_LABEL[pedido.tipo]);
     }
 
     function aoAtualizar(pedidoAtualizado) {
@@ -72,10 +67,6 @@ export default function CentralPedidos() {
         pedidosRef.current = [pedidoAtualizado, ...pedidosRef.current];
       }
       setPedidos([...pedidosRef.current]);
-
-      if (pedidoAtualizado.status === 'CANCELADO') tocarAlertaCancelamento();
-      pararRepeticao(pedidoAtualizado.id);
-      setNaoReconhecidos((lista) => lista.filter((id) => id !== pedidoAtualizado.id));
     }
 
     socket.on('connect', aoConectar);
@@ -88,14 +79,8 @@ export default function CentralPedidos() {
       socket.off('disconnect', aoDesconectar);
       socket.off('pedido:novo', aoReceberNovo);
       socket.off('pedido:atualizado', aoAtualizar);
-      pararTodasRepeticoes();
     };
   }, []);
-
-  function reconhecer(id) {
-    pararRepeticao(id);
-    setNaoReconhecidos((lista) => lista.filter((x) => x !== id));
-  }
 
   async function avancarStatus(pedido, novoStatus) {
     reconhecer(pedido.id);

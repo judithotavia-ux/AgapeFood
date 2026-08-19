@@ -1,4 +1,6 @@
-let volume = Number(localStorage.getItem('agape_alerta_volume') ?? '0.6');
+// Padrao alto de proposito - um pedido novo precisa chamar atencao de verdade, nao ser um "ding"
+// discreto facil de nao notar em cima do barulho de um salao/cozinha.
+let volume = Number(localStorage.getItem('agape_alerta_volume') ?? '0.9');
 const timersRepeticao = {};
 
 export function definirVolume(v) {
@@ -10,7 +12,7 @@ export function obterVolume() {
   return volume;
 }
 
-function tocarTom(freq, duracaoMs, atrasoS = 0) {
+function tocarTom(freq, duracaoMs, atrasoS = 0, tipoOnda = 'sine') {
   if (volume <= 0) return;
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -18,16 +20,20 @@ function tocarTom(freq, duracaoMs, atrasoS = 0) {
     const gain = ctx.createGain();
     osc.connect(gain);
     gain.connect(ctx.destination);
+    osc.type = tipoOnda;
     osc.frequency.value = freq;
-    gain.gain.setValueAtTime(volume * 0.6, ctx.currentTime + atrasoS);
+    gain.gain.setValueAtTime(Math.min(volume, 1), ctx.currentTime + atrasoS);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + atrasoS + duracaoMs / 1000);
     osc.start(ctx.currentTime + atrasoS);
     osc.stop(ctx.currentTime + atrasoS + duracaoMs / 1000 + 0.02);
   } catch (e) { /* navegador sem suporte a audio, ignora */ }
 }
 
+// Sirene curta (alterna 2 tons com onda "quadrada", mais aspera que um sine) em vez de um jingle
+// suave - o objetivo aqui e interromper o que a pessoa esta fazendo, nao soar agradavel.
 export function tocarAlertaNovoPedido() {
-  [880, 1046, 1318].forEach((f, i) => tocarTom(f, 160, i * 0.17));
+  const padraoHz = [1100, 700, 1100, 700, 1100, 700];
+  padraoHz.forEach((f, i) => tocarTom(f, 140, i * 0.15, 'square'));
 }
 
 export function tocarAlertaCancelamento() {
