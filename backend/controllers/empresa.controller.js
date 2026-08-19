@@ -1,4 +1,5 @@
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
 const sharp = require('sharp');
@@ -202,6 +203,42 @@ async function registrar(req, res) {
       empresaId: resultado.novaEmpresa.id
     }
   });
+}
+
+// SUPER_ADMIN (dono da plataforma, sem empresaId) enxerga todas as empresas cadastradas.
+async function listarTodas(req, res) {
+  const empresas = await prisma.empresa.findMany({
+    select: {
+      id: true, nome: true, slug: true, ativo: true, criadoEm: true, tipoEmpresa: true,
+      _count: { select: { usuarios: true } }
+    },
+    orderBy: { criadoEm: 'desc' }
+  });
+  res.json(empresas);
+}
+
+// Emite um token novo pro SUPER_ADMIN "entrar" numa empresa especifica - a partir daí ele usa
+// o sistema exatamente como o ADMIN daquela empresa (mesmas telas, mesmos dados), sem precisar
+// duplicar logica de escopo por empresa em cada controller.
+async function entrarComoEmpresa(req, res) {
+  const { id } = req.params;
+  const empresa = await prisma.empresa.findUnique({ where: { id } });
+  if (!empresa) return res.status(404).json({ erro: 'Empresa não encontrada.' });
+
+  const jti = crypto.randomUUID();
+  await prisma.sessaoUsuario.create({
+    data: { jti, usuarioId: req.usuario.id, userAgent: req.headers['user-agent'] || null, ip: req.ip || null }
+  });
+
+  const token = gerarToken({ ...req.usuario, empresaId: empresa.id }, jti);
+
+  registrarAuditoria({
+    empresaId: empresa.id, usuarioId: req.usuario.id, ip: req.ip,
+    acao: 'super_admin.entrar_como_empresa', entidade: 'Empresa', entidadeId: empresa.id,
+    valorDepois: { empresa: empresa.nome }
+  });
+
+  res.json({ token, empresa: { id: empresa.id, nome: empresa.nome } });
 }
 
 async function obterMinhaEmpresa(req, res) {
@@ -416,6 +453,6 @@ async function atualizarIdentidadeVisual(req, res, next) {
 }
 
 module.exports = {
-  registrar, obterMinhaEmpresa, atualizarCashback, obterConfigIA, atualizarConfigIA,
+  registrar, listarTodas, entrarComoEmpresa, obterMinhaEmpresa, atualizarCashback, obterConfigIA, atualizarConfigIA,
   obterIdentidadeVisual, atualizarIdentidadeVisual, obterDadosFiscais, atualizarDadosFiscais
 };

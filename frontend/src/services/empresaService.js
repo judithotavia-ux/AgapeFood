@@ -4,6 +4,9 @@ export const registrarEmpresa = (dados) => api.post('/empresas/registrar', dados
 export const buscarCnpj = (cnpj) => api.get(`/utilitarios/cnpj/${cnpj.replace(/\D/g, '')}`).then((r) => r.data);
 export const buscarCep = (cep) => api.get(`/utilitarios/cep/${cep.replace(/\D/g, '')}`).then((r) => r.data);
 
+export const listarEmpresas = () => api.get('/empresas').then((r) => r.data);
+export const entrarComoEmpresa = (id) => api.post(`/empresas/${id}/entrar`).then((r) => r.data);
+
 export const obterIdentidadeVisual = () => api.get('/empresas/minha/identidade-visual').then((r) => r.data);
 export const atualizarIdentidadeVisual = (formData) =>
   api.put('/empresas/minha/identidade-visual', formData, { headers: { 'Content-Type': 'multipart/form-data' } }).then((r) => r.data);

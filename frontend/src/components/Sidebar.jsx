@@ -1,6 +1,8 @@
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
+const ITEM_EMPRESAS = { to: '/empresas', label: 'Empresas', icone: '🏢' };
+
 const ITENS_ATIVOS = [
   { to: '/dashboard', label: 'Dashboard', icone: '📊' },
   { to: '/agape-ia', label: 'Ágape IA', icone: '🤖' },
@@ -31,6 +33,16 @@ const ITENS_ATIVOS = [
 export default function Sidebar() {
   const { usuario } = useAuth();
   const empresa = usuario?.empresa;
+  const superAdmin = usuario?.papel === 'SUPER_ADMIN';
+  const visaoGeral = superAdmin && !empresa;
+
+  // Super admin sem empresa selecionada: so faz sentido ver Dashboard (visao da plataforma) e a
+  // lista de Empresas. As telas de baixo (Caixa, Garçons etc.) so tem dado depois de "entrar" numa.
+  const itens = visaoGeral
+    ? [ITENS_ATIVOS[0], ITEM_EMPRESAS]
+    : superAdmin
+      ? [ITENS_ATIVOS[0], ITEM_EMPRESAS, ...ITENS_ATIVOS.slice(1)]
+      : ITENS_ATIVOS;
 
   return (
     <aside style={{
@@ -47,12 +59,14 @@ export default function Sidebar() {
           {empresa?.logoUrl && <img src={empresa.logoUrl} alt="" style={{ width: 32, height: 32, objectFit: 'contain', borderRadius: 6 }} />}
           <h2 style={{ fontSize: 20 }}>{empresa?.nome || 'AgapeFood'}</h2>
         </div>
-        <div style={{ fontSize: 11, color: 'var(--texto2)', marginTop: 2 }}>{empresa?.slogan || 'Painel administrativo'}</div>
+        <div style={{ fontSize: 11, color: 'var(--texto2)', marginTop: 2 }}>
+          {empresa?.slogan || (visaoGeral ? 'Visão geral da plataforma' : 'Painel administrativo')}
+        </div>
       </div>
 
       <nav style={{ flex: 1, padding: '14px 0' }}>
         <div style={{ padding: '0 20px', fontSize: 10, letterSpacing: '.08em', color: 'var(--texto2)', marginBottom: 6 }}>PRINCIPAL</div>
-        {ITENS_ATIVOS.map((item) => (
+        {itens.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}

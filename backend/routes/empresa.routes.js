@@ -1,9 +1,9 @@
 const express = require('express');
 const {
-  registrar, obterMinhaEmpresa, atualizarCashback, obterConfigIA, atualizarConfigIA,
+  registrar, listarTodas, entrarComoEmpresa, obterMinhaEmpresa, atualizarCashback, obterConfigIA, atualizarConfigIA,
   obterIdentidadeVisual, atualizarIdentidadeVisual, obterDadosFiscais, atualizarDadosFiscais
 } = require('../controllers/empresa.controller');
-const { autenticar } = require('../middlewares/auth.middleware');
+const { autenticar, exigirPapel } = require('../middlewares/auth.middleware');
 const { exigirPermissao } = require('../utils/permissoes');
 const uploadLogos = require('../middlewares/uploadLogo.middleware');
 
@@ -11,6 +11,10 @@ const router = express.Router();
 
 // Publica - cadastro de nova empresa (signup do SaaS)
 router.post('/registrar', registrar);
+
+// SUPER_ADMIN (dono da plataforma) - ver todas as empresas e "entrar" em qualquer uma delas
+router.get('/', autenticar, exigirPapel('SUPER_ADMIN'), listarTodas);
+router.post('/:id/entrar', autenticar, exigirPapel('SUPER_ADMIN'), entrarComoEmpresa);
 
 // GET fica so autenticado: sao consultas usadas dentro de outras telas (Marketing, Agape IA)
 // que ainda nao tem gate por permissao neste modulo - so a mutacao (mudar configuracao) e restrita.

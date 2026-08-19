@@ -10,6 +10,24 @@ export function salvarToken(token) {
   localStorage.setItem('agapefood_token', token);
 }
 
+export function obterToken() {
+  return localStorage.getItem('agapefood_token');
+}
+
+// Usado pelo SUPER_ADMIN ao "entrar" numa empresa - guarda o token de visao geral pra dar pra
+// voltar depois, sem precisar logar de novo.
+export function guardarTokenSuperAdmin(token) {
+  localStorage.setItem('agapefood_token_super_admin', token);
+}
+
+export function tokenSuperAdminSalvo() {
+  return localStorage.getItem('agapefood_token_super_admin');
+}
+
+export function limparTokenSuperAdmin() {
+  localStorage.removeItem('agapefood_token_super_admin');
+}
+
 export async function buscarUsuarioLogado() {
   const { data } = await api.get('/auth/me');
   return data;
@@ -17,6 +35,7 @@ export async function buscarUsuarioLogado() {
 
 export function logout() {
   localStorage.removeItem('agapefood_token');
+  localStorage.removeItem('agapefood_token_super_admin');
 }
 
 export function estaAutenticado() {
