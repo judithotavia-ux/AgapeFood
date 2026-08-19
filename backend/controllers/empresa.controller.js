@@ -205,6 +205,132 @@ async function registrar(req, res) {
   });
 }
 
+// Igual ao "registrar" publico (signup do SaaS), mas usado pelo SUPER_ADMIN de dentro do painel
+// pra cadastrar uma empresa em nome do cliente, escolhendo o plano dela na hora - em vez de cair
+// sempre no primeiro plano ativo. Nao loga o super admin como o novo responsavel (ele continua
+// na propria sessao); quem usa a conta criada e o responsavel da empresa.
+async function cadastrarComoAdmin(req, res) {
+  const { empresa, endereco, contatos, responsavel, planoId } = req.body || {};
+
+  if (!empresa?.nomeFantasia || !empresa.nomeFantasia.trim()) {
+    return res.status(400).json({ erro: 'Informe o nome fantasia da empresa.' });
+  }
+  if (!responsavel?.nome || !responsavel.nome.trim()) return res.status(400).json({ erro: 'Informe o nome do responsável.' });
+  if (!responsavel?.email || !responsavel.email.trim()) return res.status(400).json({ erro: 'Informe o e-mail do responsável.' });
+  if (!responsavel?.senha || responsavel.senha.length < 6) return res.status(400).json({ erro: 'A senha deve ter no mínimo 6 caracteres.' });
+  if (responsavel.senha !== responsavel.confirmarSenha) return res.status(400).json({ erro: 'As senhas não coincidem.' });
+  if (!planoId) return res.status(400).json({ erro: 'Selecione um plano para a empresa.' });
+
+  const plano = await prisma.plano.findFirst({ where: { id: planoId, ativo: true } });
+  if (!plano) return res.status(400).json({ erro: 'Plano inválido.' });
+
+  const emailLimpo = String(responsavel.email).toLowerCase().trim();
+  const emailExistente = await prisma.usuario.findUnique({ where: { email: emailLimpo } });
+  if (emailExistente) return res.status(400).json({ erro: 'Já existe uma conta com esse e-mail.' });
+
+  const cnpjLimpo = empresa.cnpj ? apenasDigitos(empresa.cnpj) : null;
+  if (cnpjLimpo) {
+    const cnpjExistente = await prisma.empresa.findUnique({ where: { cnpj: cnpjLimpo } });
+    if (cnpjExistente) return res.status(400).json({ erro: 'Já existe uma empresa cadastrada com esse CNPJ.' });
+  }
+
+  const cpfLimpo = responsavel.cpf ? apenasDigitos(responsavel.cpf) : null;
+  if (cpfLimpo) {
+    const cpfExistente = await prisma.usuario.findUnique({ where: { cpf: cpfLimpo } });
+    if (cpfExistente) return res.status(400).json({ erro: 'Já existe uma conta cadastrada com esse CPF.' });
+  }
+
+  const slug = await gerarSlugUnico(empresa.nomeFantasia);
+  const senhaHash = await bcrypt.hash(responsavel.senha, 10);
+
+  const resultado = await prisma.$transaction(async (tx) => {
+    const novaEmpresa = await tx.empresa.create({
+      data: {
+        nome: empresa.nomeFantasia.trim(),
+        slug,
+        razaoSocial: empresa.razaoSocial || null,
+        cnpj: cnpjLimpo,
+        inscricaoEstadual: empresa.inscricaoEstadual || null,
+        inscricaoMunicipal: empresa.inscricaoMunicipal || null,
+        dataFundacao: empresa.dataFundacao ? new Date(empresa.dataFundacao) : null,
+        tipoEmpresa: empresa.tipoEmpresa || 'OUTRO',
+        regimeTributario: empresa.regimeTributario || null,
+        ramoAtividade: empresa.ramoAtividade || null,
+        descricao: empresa.descricao || null,
+
+        cep: endereco?.cep || null,
+        endereco: endereco?.endereco || null,
+        numero: endereco?.numero || null,
+        complemento: endereco?.complemento || null,
+        bairro: endereco?.bairro || null,
+        cidade: endereco?.cidade || null,
+        estado: endereco?.estado || null,
+        pais: endereco?.pais || 'Brasil',
+
+        telefone: contatos?.telefone || null,
+        whatsapp: contatos?.whatsapp || null,
+        emailContato: contatos?.email || null,
+        site: contatos?.site || null,
+        instagram: contatos?.instagram || null,
+        facebook: contatos?.facebook || null,
+        tiktok: contatos?.tiktok || null,
+        youtube: contatos?.youtube || null,
+
+        termosAceitosEm: new Date()
+      }
+    });
+
+    const admin = await tx.usuario.create({
+      data: {
+        nome: responsavel.nome.trim(),
+        email: emailLimpo,
+        senhaHash,
+        papel: 'ADMIN',
+        cpf: cpfLimpo,
+        rg: responsavel.rg || null,
+        dataNascimento: responsavel.dataNascimento ? new Date(responsavel.dataNascimento) : null,
+        telefone: responsavel.telefone || null,
+        empresaId: novaEmpresa.id
+      }
+    });
+
+    await tx.categoria.createMany({
+      data: CATEGORIAS_PADRAO.map((nome, i) => ({ nome, ordem: i, empresaId: novaEmpresa.id }))
+    });
+
+    await tx.canalEntregaConfig.createMany({
+      data: TIPOS_CANAL.map((tipo) => ({ tipo, ativo: tipo === 'MOTOBOY_PROPRIO', empresaId: novaEmpresa.id }))
+    });
+
+    const agora = new Date();
+    const fimTrial = new Date(agora.getTime() + 14 * 24 * 60 * 60 * 1000);
+    await tx.assinatura.create({
+      data: {
+        empresaId: novaEmpresa.id,
+        planoId: plano.id,
+        status: 'TRIAL',
+        inicioTrialEm: agora,
+        fimTrialEm: fimTrial,
+        proximaCobrancaEm: fimTrial
+      }
+    });
+
+    return { novaEmpresa, admin };
+  });
+
+  registrarAuditoria({
+    empresaId: resultado.novaEmpresa.id, usuarioId: req.usuario.id, ip: req.ip,
+    acao: 'super_admin.cadastrar_empresa', entidade: 'Empresa', entidadeId: resultado.novaEmpresa.id,
+    valorDepois: { empresa: resultado.novaEmpresa.nome, plano: plano.nome }
+  });
+
+  res.status(201).json({
+    empresa: { id: resultado.novaEmpresa.id, nome: resultado.novaEmpresa.nome },
+    admin: { nome: resultado.admin.nome, email: resultado.admin.email },
+    plano: { nome: plano.nome }
+  });
+}
+
 // SUPER_ADMIN (dono da plataforma, sem empresaId) enxerga todas as empresas cadastradas.
 async function listarTodas(req, res) {
   const empresas = await prisma.empresa.findMany({
@@ -453,6 +579,6 @@ async function atualizarIdentidadeVisual(req, res, next) {
 }
 
 module.exports = {
-  registrar, listarTodas, entrarComoEmpresa, obterMinhaEmpresa, atualizarCashback, obterConfigIA, atualizarConfigIA,
+  registrar, cadastrarComoAdmin, listarTodas, entrarComoEmpresa, obterMinhaEmpresa, atualizarCashback, obterConfigIA, atualizarConfigIA,
   obterIdentidadeVisual, atualizarIdentidadeVisual, obterDadosFiscais, atualizarDadosFiscais
 };

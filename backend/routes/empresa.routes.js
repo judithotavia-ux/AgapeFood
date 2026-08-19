@@ -1,6 +1,6 @@
 const express = require('express');
 const {
-  registrar, listarTodas, entrarComoEmpresa, obterMinhaEmpresa, atualizarCashback, obterConfigIA, atualizarConfigIA,
+  registrar, cadastrarComoAdmin, listarTodas, entrarComoEmpresa, obterMinhaEmpresa, atualizarCashback, obterConfigIA, atualizarConfigIA,
   obterIdentidadeVisual, atualizarIdentidadeVisual, obterDadosFiscais, atualizarDadosFiscais
 } = require('../controllers/empresa.controller');
 const { autenticar, exigirPapel } = require('../middlewares/auth.middleware');
@@ -12,8 +12,10 @@ const router = express.Router();
 // Publica - cadastro de nova empresa (signup do SaaS)
 router.post('/registrar', registrar);
 
-// SUPER_ADMIN (dono da plataforma) - ver todas as empresas e "entrar" em qualquer uma delas
+// SUPER_ADMIN (dono da plataforma) - ver todas as empresas, cadastrar uma nova em nome do
+// cliente (escolhendo o plano dela) e "entrar" em qualquer uma delas
 router.get('/', autenticar, exigirPapel('SUPER_ADMIN'), listarTodas);
+router.post('/', autenticar, exigirPapel('SUPER_ADMIN'), cadastrarComoAdmin);
 router.post('/:id/entrar', autenticar, exigirPapel('SUPER_ADMIN'), entrarComoEmpresa);
 
 // GET fica so autenticado: sao consultas usadas dentro de outras telas (Marketing, Agape IA)

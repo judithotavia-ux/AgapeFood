@@ -36,6 +36,7 @@ import LogAuditoria from './pages/LogAuditoria';
 import IdentidadeVisual from './pages/IdentidadeVisual';
 import DadosFiscais from './pages/DadosFiscais';
 import Empresas from './pages/Empresas';
+import NovaEmpresa from './pages/NovaEmpresa';
 
 export default function App() {
   return (
@@ -247,6 +248,14 @@ export default function App() {
             element={
               <RotaProtegida>
                 <Empresas />
+              </RotaProtegida>
+            }
+          />
+          <Route
+            path="/empresas/nova"
+            element={
+              <RotaProtegida>
+                <NovaEmpresa />
               </RotaProtegida>
             }
           />

@@ -6,6 +6,7 @@ export const buscarCep = (cep) => api.get(`/utilitarios/cep/${cep.replace(/\D/g,
 
 export const listarEmpresas = () => api.get('/empresas').then((r) => r.data);
 export const entrarComoEmpresa = (id) => api.post(`/empresas/${id}/entrar`).then((r) => r.data);
+export const cadastrarEmpresaComoAdmin = (dados) => api.post('/empresas', dados).then((r) => r.data);
 
 export const obterIdentidadeVisual = () => api.get('/empresas/minha/identidade-visual').then((r) => r.data);
 export const atualizarIdentidadeVisual = (formData) =>

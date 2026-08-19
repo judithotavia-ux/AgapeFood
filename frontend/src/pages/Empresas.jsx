@@ -42,9 +42,12 @@ export default function Empresas() {
 
   return (
     <AdminLayout titulo="Empresas">
-      <p style={{ color: 'var(--texto2)', fontSize: 13.5, marginBottom: 22 }}>
-        Todas as empresas cadastradas na plataforma AgapeFood. Clique em "Entrar" pra acessar o painel de uma empresa como se fosse o admin dela.
-      </p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 22, flexWrap: 'wrap' }}>
+        <p style={{ color: 'var(--texto2)', fontSize: 13.5, margin: 0, maxWidth: 520 }}>
+          Todas as empresas cadastradas na plataforma AgapeFood. Clique em "Entrar" pra acessar o painel de uma empresa como se fosse o admin dela.
+        </p>
+        <button className="btn" style={{ whiteSpace: 'nowrap' }} onClick={() => navigate('/empresas/nova')}>+ Cadastrar nova empresa</button>
+      </div>
 
       {erro && <div className="erro-msg" style={{ marginBottom: 16 }}>{erro}</div>}
 
