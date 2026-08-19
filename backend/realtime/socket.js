@@ -1,11 +1,17 @@
 const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
+const { origemPermitida } = require('../utils/corsOrigem');
 
 let io = null;
 
 function initSocket(httpServer) {
   io = new Server(httpServer, {
-    cors: { origin: process.env.CORS_ORIGIN || '*' }
+    cors: {
+      origin: (origin, callback) => {
+        if (origemPermitida(origin)) return callback(null, true);
+        callback(new Error('Origem não permitida pelo CORS.'));
+      }
+    }
   });
 
   io.use((socket, next) => {

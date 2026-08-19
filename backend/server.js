@@ -3,6 +3,7 @@ const path = require('path');
 const http = require('http');
 const express = require('express');
 const cors = require('cors');
+const { origemPermitida } = require('./utils/corsOrigem');
 const { initSocket } = require('./realtime/socket');
 const prisma = require('./prisma/client');
 
@@ -77,22 +78,8 @@ process.on('uncaughtException', (err) => {
 
 const app = express();
 
-// Alem da URL fixa de producao (CORS_ORIGIN), libera qualquer preview deploy da Vercel
-// deste projeto (ex: agape-food-<hash>-<time>.vercel.app) - a Vercel gera uma URL unica
-// por deploy, entao uma lista fixa de origens quebraria a cada novo deploy. Tambem libera
-// explicitamente o dominio proprio da empresa (com e sem www) - fica hardcoded em vez de
-// depender so da variavel CORS_ORIGIN (que so guarda uma origem) pra nao quebrar o login
-// assim que um dominio novo for apontado antes de alguem lembrar de atualizar a variavel.
-const ORIGEM_PRODUCAO = process.env.CORS_ORIGIN;
-const REGEX_PREVIEW_VERCEL = /^https:\/\/agape-food-[\w-]+\.vercel\.app$/;
-const DOMINIOS_PROPRIOS = ['https://gratidaoagape.com.br', 'https://www.gratidaoagape.com.br'];
-
 function origemPermitidaCors(origin, callback) {
-  if (!origin) return callback(null, true);
-  if (!ORIGEM_PRODUCAO) return callback(null, true);
-  if (origin === ORIGEM_PRODUCAO || origin === 'http://localhost:5173' || REGEX_PREVIEW_VERCEL.test(origin) || DOMINIOS_PROPRIOS.includes(origin)) {
-    return callback(null, true);
-  }
+  if (origemPermitida(origin)) return callback(null, true);
   callback(new Error('Origem não permitida pelo CORS.'));
 }
 
