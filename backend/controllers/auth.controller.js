@@ -96,7 +96,7 @@ async function esqueciSenha(req, res) {
 
   await prisma.tokenResetSenha.create({ data: { token, expiraEm, usuarioId: usuario.id } });
 
-  const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const baseUrl = process.env.FRONTEND_URL || process.env.CORS_ORIGIN || 'http://localhost:5173';
   const link = `${baseUrl}/redefinir-senha?token=${token}`;
 
   try {
