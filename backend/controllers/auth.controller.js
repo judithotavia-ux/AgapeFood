@@ -57,23 +57,27 @@ async function login(req, res) {
 }
 
 async function me(req, res) {
-  const usuario = await prisma.usuario.findUnique({
-    where: { id: req.usuario.id },
-    include: { empresa: true }
-  });
+  const usuario = await prisma.usuario.findUnique({ where: { id: req.usuario.id } });
 
   if (!usuario) {
     return res.status(404).json({ erro: 'Usuário não encontrado.' });
   }
+
+  // A empresa "ativa" vem do token (req.usuario.empresaId), nao do vinculo fixo do usuario no
+  // banco - assim o SUPER_ADMIN "entrando como" uma empresa (token com empresaId trocado) enxerga
+  // a empresa certa aqui, mesmo sem estar permanentemente vinculado a nenhuma.
+  const empresa = req.usuario.empresaId
+    ? await prisma.empresa.findUnique({ where: { id: req.usuario.empresaId } })
+    : null;
 
   return res.json({
     id: usuario.id,
     nome: usuario.nome,
     email: usuario.email,
     papel: usuario.papel,
-    empresa: usuario.empresa ? {
-      id: usuario.empresa.id, nome: usuario.empresa.nome, slug: usuario.empresa.slug,
-      logoUrl: usuario.empresa.logoUrl, slogan: usuario.empresa.slogan, corPrimaria: usuario.empresa.corPrimaria
+    empresa: empresa ? {
+      id: empresa.id, nome: empresa.nome, slug: empresa.slug,
+      logoUrl: empresa.logoUrl, slogan: empresa.slogan, corPrimaria: empresa.corPrimaria
     } : null
   });
 }
