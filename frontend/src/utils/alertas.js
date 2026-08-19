@@ -12,10 +12,27 @@ export function obterVolume() {
   return volume;
 }
 
+// Um contexto so, reaproveitado - criar um AudioContext novo pra cada tom (a sirene toca 6, a
+// cada 15s enquanto ninguem reconhece) esgota o limite de contextos simultaneos que o navegador
+// permite por pagina, e a falha fica engolida pelo catch, dando silencio total sem erro visivel.
+let ctxAudio = null;
+function obterContextoAudio() {
+  if (!ctxAudio) ctxAudio = new (window.AudioContext || window.webkitAudioContext)();
+  if (ctxAudio.state === 'suspended') ctxAudio.resume().catch(() => {});
+  return ctxAudio;
+}
+
+// Navegadores só liberam audio depois de alguma interacao do usuario na pagina - destrava o
+// contexto assim que isso acontecer, em vez de depender do proprio alarme ser o "primeiro som".
+if (typeof window !== 'undefined') {
+  const destravarAudio = () => { try { obterContextoAudio(); } catch (e) { /* ignora */ } };
+  ['click', 'keydown', 'touchstart'].forEach((ev) => window.addEventListener(ev, destravarAudio, { once: true }));
+}
+
 function tocarTom(freq, duracaoMs, atrasoS = 0, tipoOnda = 'sine') {
   if (volume <= 0) return;
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = obterContextoAudio();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.connect(gain);
