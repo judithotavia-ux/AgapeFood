@@ -1,5 +1,5 @@
 const express = require('express');
-const { listar, obter, criar, atualizar, remover, testarImpressao } = require('../controllers/impressora.controller');
+const { listar, obter, criar, atualizar, remover, testarImpressao, preVisualizarTeste } = require('../controllers/impressora.controller');
 const { autenticar } = require('../middlewares/auth.middleware');
 
 const router = express.Router();
@@ -11,5 +11,6 @@ router.post('/', criar);
 router.put('/:id', atualizar);
 router.delete('/:id', remover);
 router.post('/:id/testar', testarImpressao);
+router.get('/:id/pre-visualizar', preVisualizarTeste);
 
 module.exports = router;

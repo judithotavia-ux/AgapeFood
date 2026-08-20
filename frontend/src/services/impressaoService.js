@@ -7,6 +7,7 @@ export const criarImpressora = (dados) => api.post('/impressoras', dados).then((
 export const atualizarImpressora = (id, dados) => api.put(`/impressoras/${id}`, dados).then((r) => r.data);
 export const excluirImpressora = (id) => api.delete(`/impressoras/${id}`);
 export const testarImpressora = (id) => api.post(`/impressoras/${id}/testar`).then((r) => r.data);
+export const preVisualizarImpressora = (id) => api.get(`/impressoras/${id}/pre-visualizar`).then((r) => r.data);
 
 // Fila de impressão
 export const listarPrintJobs = (params) => api.get('/print-jobs', { params }).then((r) => r.data);

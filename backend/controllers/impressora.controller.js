@@ -1,5 +1,5 @@
 const prisma = require('../prisma/client');
-const { criarJobTeste } = require('../services/impressao.service');
+const { criarJobTeste, montarTeste } = require('../services/impressao.service');
 
 const SETORES_VALIDOS = ['COZINHA', 'BAR', 'CONFEITARIA', 'PIZZARIA', 'ACAI', 'SALGADOS', 'BALCAO', 'GARCOM', 'CAIXA', 'DELIVERY', 'OUTRO'];
 const CONEXOES_VALIDAS = ['USB', 'REDE', 'BLUETOOTH'];
@@ -112,4 +112,14 @@ async function testarImpressao(req, res) {
   res.status(201).json(job);
 }
 
-module.exports = { listar, obter, criar, atualizar, remover, testarImpressao };
+// So monta o conteudo (mesma funcao usada pelo job de teste de verdade) sem criar nenhum job -
+// serve pra mostrar na tela como vai sair impresso antes de mandar de fato pro agente local.
+async function preVisualizarTeste(req, res) {
+  const { id } = req.params;
+  const impressora = await prisma.printer.findFirst({ where: { id, empresaId: req.usuario.empresaId } });
+  if (!impressora) return res.status(404).json({ erro: 'Impressora não encontrada.' });
+
+  res.json({ documento: montarTeste(impressora), larguraPapelMm: impressora.larguraPapelMm, caracteresPorLinha: impressora.caracteresPorLinha });
+}
+
+module.exports = { listar, obter, criar, atualizar, remover, testarImpressao, preVisualizarTeste };

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import AdminLayout from '../layouts/AdminLayout';
 import Modal from '../components/Modal';
+import PreVisualizacaoImpressao from '../components/PreVisualizacaoImpressao';
 import * as impressaoService from '../services/impressaoService';
 import {
   SETOR_LABEL, SETOR_ICONE, CONEXAO_LABEL, STATUS_IMPRESSORA_LABEL, STATUS_IMPRESSORA_COR, STATUS_IMPRESSORA_ICONE
@@ -27,6 +28,9 @@ export default function Impressoras() {
 
   const [testando, setTestando] = useState(null);
   const [avisoTeste, setAvisoTeste] = useState('');
+
+  const [previa, setPrevia] = useState(null);
+  const [carregandoPrevia, setCarregandoPrevia] = useState(null);
 
   async function carregar() {
     setCarregando(true);
@@ -92,6 +96,18 @@ export default function Impressoras() {
     }
   }
 
+  async function handleVisualizar(impressora) {
+    setCarregandoPrevia(impressora.id);
+    try {
+      const dados = await impressaoService.preVisualizarImpressora(impressora.id);
+      setPrevia({ nome: impressora.nome, ...dados });
+    } catch (err) {
+      alert(err.response?.data?.erro || 'Não foi possível gerar a pré-visualização.');
+    } finally {
+      setCarregandoPrevia(null);
+    }
+  }
+
   async function handleTestar(impressora) {
     setTestando(impressora.id);
     setAvisoTeste('');
@@ -138,6 +154,9 @@ export default function Impressoras() {
             {imp.ultimoErro && <div style={{ fontSize: 11, color: 'var(--erro)', marginTop: 4 }}>⚠ {imp.ultimoErro}</div>}
 
             <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+              <button className="btn-outline" style={{ fontSize: 11.5, padding: '6px 10px' }} onClick={() => handleVisualizar(imp)} disabled={carregandoPrevia === imp.id}>
+                {carregandoPrevia === imp.id ? 'Carregando…' : '👁️ Visualizar'}
+              </button>
               <button className="btn-outline" style={{ fontSize: 11.5, padding: '6px 10px' }} onClick={() => handleTestar(imp)} disabled={testando === imp.id}>
                 {testando === imp.id ? 'Enviando…' : '🖨️ Testar impressão'}
               </button>
@@ -149,6 +168,17 @@ export default function Impressoras() {
           </div>
         ))}
       </div>
+
+      <Modal titulo={previa ? `Pré-visualização — ${previa.nome}` : ''} aberto={!!previa} onFechar={() => setPrevia(null)} largura={380}>
+        {previa && (
+          <>
+            <p style={{ fontSize: 12, color: 'var(--texto2)', marginBottom: 4 }}>
+              É assim que vai sair no papel — sem precisar do Agente de Impressão ligado.
+            </p>
+            <PreVisualizacaoImpressao documento={previa.documento} larguraPapelMm={previa.larguraPapelMm} />
+          </>
+        )}
+      </Modal>
 
       <Modal titulo={editando ? 'Editar impressora' : 'Nova impressora'} aberto={modalAberto} onFechar={() => setModalAberto(false)} largura={480}>
         <form onSubmit={handleSalvar}>
