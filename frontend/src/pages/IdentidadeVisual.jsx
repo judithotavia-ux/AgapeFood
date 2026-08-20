@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import AdminLayout from '../layouts/AdminLayout';
 import * as empresaService from '../services/empresaService';
+import { gerarPaletaAutomatica } from '../utils/cor';
 
 const TEMA_LABEL = { CLARO: 'Claro', ESCURO: 'Escuro', AUTOMATICO: 'Automático (segue o dispositivo)' };
 
@@ -47,7 +48,7 @@ function CampoCor({ rotulo, valor, onChange }) {
       <label>{rotulo}</label>
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
         <input type="color" value={valor || '#000000'} onChange={(e) => onChange(e.target.value)} style={{ width: 40, height: 36, padding: 2, cursor: 'pointer' }} />
-        <input type="text" value={valor || ''} onChange={(e) => onChange(e.target.value)} placeholder="#D4AF37" style={{ flex: 1 }} />
+        <input type="text" value={valor || ''} onChange={(e) => onChange(e.target.value)} placeholder="Ex: #D4AF37 (ainda não definida)" style={{ flex: 1 }} />
       </div>
     </div>
   );
@@ -76,6 +77,22 @@ export default function IdentidadeVisual() {
 
   function set(campo, valor) {
     setDados((d) => ({ ...d, [campo]: valor }));
+  }
+
+  // Gera Secundaria/Destaque/Texto a partir da Cor Primaria - so preenche os campos que ainda
+  // estao vazios, pra nunca sobrescrever uma cor que a pessoa ja escolheu na mao.
+  function alterarCorPrimaria(valor) {
+    setDados((d) => {
+      const paleta = gerarPaletaAutomatica(valor);
+      if (!paleta) return { ...d, corPrimaria: valor };
+      return {
+        ...d,
+        corPrimaria: valor,
+        corSecundaria: d.corSecundaria || paleta.corSecundaria,
+        corDestaque: d.corDestaque || paleta.corDestaque,
+        corTexto: d.corTexto || paleta.corTexto
+      };
+    });
   }
 
   function escolherLogo(campo) {
@@ -172,7 +189,7 @@ export default function IdentidadeVisual() {
         <div className="card">
           <h3 style={{ fontSize: 15, marginBottom: 14 }}>Cores</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14 }}>
-            <CampoCor rotulo="Cor primária" valor={dados.corPrimaria} onChange={(v) => set('corPrimaria', v)} />
+            <CampoCor rotulo="Cor primária" valor={dados.corPrimaria} onChange={alterarCorPrimaria} />
             <CampoCor rotulo="Cor secundária" valor={dados.corSecundaria} onChange={(v) => set('corSecundaria', v)} />
             <CampoCor rotulo="Cor de destaque" valor={dados.corDestaque} onChange={(v) => set('corDestaque', v)} />
             <CampoCor rotulo="Cor do texto" valor={dados.corTexto} onChange={(v) => set('corTexto', v)} />
