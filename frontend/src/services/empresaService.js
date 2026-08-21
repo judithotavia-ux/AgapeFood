@@ -5,6 +5,7 @@ export const buscarCnpj = (cnpj) => api.get(`/utilitarios/cnpj/${cnpj.replace(/\
 export const buscarCep = (cep) => api.get(`/utilitarios/cep/${cep.replace(/\D/g, '')}`).then((r) => r.data);
 
 export const listarEmpresas = () => api.get('/empresas').then((r) => r.data);
+export const obterIndicadores = (params) => api.get('/empresas/indicadores', { params }).then((r) => r.data);
 export const entrarComoEmpresa = (id) => api.post(`/empresas/${id}/entrar`).then((r) => r.data);
 export const cadastrarEmpresaComoAdmin = (dados) => api.post('/empresas', dados).then((r) => r.data);
 

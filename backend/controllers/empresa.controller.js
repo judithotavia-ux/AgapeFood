@@ -332,6 +332,65 @@ async function cadastrarComoAdmin(req, res) {
   });
 }
 
+// SUPER_ADMIN (dono da plataforma) - indicadores de cada empresa lado a lado: funcionarios
+// cadastrados e vendas (pedidos nao cancelados) hoje / ultimos 7 dias / mes corrente, mais um
+// periodo personalizado opcional (?inicio=AAAA-MM-DD&fim=AAAA-MM-DD). Usa groupBy pra pegar todas
+// as empresas de uma vez por periodo, em vez de rodar uma query por empresa.
+async function indicadores(req, res) {
+  const { inicio, fim } = req.query;
+
+  const empresas = await prisma.empresa.findMany({
+    select: { id: true, nome: true },
+    orderBy: { nome: 'asc' }
+  });
+
+  const agora = new Date();
+  const inicioHoje = new Date(agora);
+  inicioHoje.setHours(0, 0, 0, 0);
+  const inicioSemana = new Date(agora.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
+
+  async function vendasPorEmpresa(desde, ate) {
+    const grupos = await prisma.pedido.groupBy({
+      by: ['empresaId'],
+      where: { criadoEm: { gte: desde, ...(ate ? { lte: ate } : {}) }, status: { not: 'CANCELADO' } },
+      _sum: { valorTotal: true },
+      _count: { _all: true }
+    });
+    const mapa = {};
+    grupos.forEach((g) => { mapa[g.empresaId] = { pedidos: g._count._all, faturamento: Number(g._sum.valorTotal || 0) }; });
+    return mapa;
+  }
+
+  const periodoValido = inicio && fim;
+
+  const [funcionariosGrupos, vendasHoje, vendasSemana, vendasMes, vendasPeriodo] = await Promise.all([
+    prisma.usuario.groupBy({ by: ['empresaId'], where: { empresaId: { not: null } }, _count: { _all: true } }),
+    vendasPorEmpresa(inicioHoje),
+    vendasPorEmpresa(inicioSemana),
+    vendasPorEmpresa(inicioMes),
+    periodoValido ? vendasPorEmpresa(new Date(`${inicio}T00:00:00`), new Date(`${fim}T23:59:59`)) : Promise.resolve(null)
+  ]);
+
+  const funcionariosMapa = {};
+  funcionariosGrupos.forEach((g) => { funcionariosMapa[g.empresaId] = g._count._all; });
+
+  const vazio = { pedidos: 0, faturamento: 0 };
+  const resultado = empresas.map((e) => ({
+    id: e.id,
+    nome: e.nome,
+    funcionarios: funcionariosMapa[e.id] || 0,
+    vendas: {
+      hoje: vendasHoje[e.id] || vazio,
+      semana: vendasSemana[e.id] || vazio,
+      mes: vendasMes[e.id] || vazio,
+      ...(vendasPeriodo ? { periodo: vendasPeriodo[e.id] || vazio } : {})
+    }
+  }));
+
+  res.json(resultado);
+}
+
 // SUPER_ADMIN (dono da plataforma, sem empresaId) enxerga todas as empresas cadastradas.
 async function listarTodas(req, res) {
   const empresas = await prisma.empresa.findMany({
@@ -580,6 +639,6 @@ async function atualizarIdentidadeVisual(req, res, next) {
 }
 
 module.exports = {
-  registrar, cadastrarComoAdmin, listarTodas, entrarComoEmpresa, obterMinhaEmpresa, atualizarCashback, obterConfigIA, atualizarConfigIA,
+  registrar, cadastrarComoAdmin, listarTodas, indicadores, entrarComoEmpresa, obterMinhaEmpresa, atualizarCashback, obterConfigIA, atualizarConfigIA,
   obterIdentidadeVisual, atualizarIdentidadeVisual, obterDadosFiscais, atualizarDadosFiscais
 };
