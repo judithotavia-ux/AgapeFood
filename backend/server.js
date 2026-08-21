@@ -1,9 +1,9 @@
 require('dotenv').config();
-const path = require('path');
 const http = require('http');
 const express = require('express');
 const cors = require('cors');
 const { origemPermitida } = require('./utils/corsOrigem');
+const { UPLOADS_BASE } = require('./utils/uploadsDir');
 const { initSocket } = require('./realtime/socket');
 const prisma = require('./prisma/client');
 
@@ -85,7 +85,7 @@ function origemPermitidaCors(origin, callback) {
 
 app.use(cors({ origin: origemPermitidaCors }));
 app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(UPLOADS_BASE));
 
 app.get('/api/health', async (req, res) => {
   try {

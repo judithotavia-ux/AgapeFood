@@ -1,6 +1,6 @@
 const fs = require('fs');
-const path = require('path');
 const prisma = require('../prisma/client');
+const { caminhoUploads } = require('../utils/uploadsDir');
 
 function montarUrlImagem(req, nomeArquivo) {
   if (!nomeArquivo) return null;
@@ -88,11 +88,11 @@ async function atualizar(req, res) {
   let imagemUrl = existente.imagemUrl;
   if (req.file) {
     const arquivoAntigo = extrairNomeArquivo(existente.imagemUrl);
-    if (arquivoAntigo) fs.unlink(path.join(__dirname, '..', 'uploads', 'produtos', arquivoAntigo), () => {});
+    if (arquivoAntigo) fs.unlink(caminhoUploads('produtos', arquivoAntigo), () => {});
     imagemUrl = montarUrlImagem(req, req.file.filename);
   } else if (removerImagem === 'true' || removerImagem === true) {
     const arquivoAntigo = extrairNomeArquivo(existente.imagemUrl);
-    if (arquivoAntigo) fs.unlink(path.join(__dirname, '..', 'uploads', 'produtos', arquivoAntigo), () => {});
+    if (arquivoAntigo) fs.unlink(caminhoUploads('produtos', arquivoAntigo), () => {});
     imagemUrl = null;
   }
 
@@ -161,7 +161,7 @@ async function remover(req, res) {
   if (!existente) return res.status(404).json({ erro: 'Produto não encontrado.' });
 
   const arquivo = extrairNomeArquivo(existente.imagemUrl);
-  if (arquivo) fs.unlink(path.join(__dirname, '..', 'uploads', 'produtos', arquivo), () => {});
+  if (arquivo) fs.unlink(caminhoUploads('produtos', arquivo), () => {});
 
   await prisma.produto.delete({ where: { id } });
   res.status(204).send();

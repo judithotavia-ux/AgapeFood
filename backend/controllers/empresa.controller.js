@@ -7,6 +7,7 @@ const prisma = require('../prisma/client');
 const { gerarToken } = require('./auth.controller');
 const { criptografar, descriptografar } = require('../utils/criptografia');
 const { registrarAuditoria } = require('../utils/auditoria');
+const { caminhoUploads } = require('../utils/uploadsDir');
 
 // Logos enviados costumam vir gigantes (ja vimos um de 2MB nesse sistema pra um espaco de 32px na
 // tela). Redimensiona pra um tamanho generoso o bastante pra qualquer uso (sidebar, cardapio,
@@ -52,7 +53,7 @@ function extrairNomeArquivoLogo(url) {
 
 function removerArquivoLogoAntigo(url) {
   const nome = extrairNomeArquivoLogo(url);
-  if (nome) fs.unlink(path.join(__dirname, '..', 'uploads', 'empresas', nome), () => {});
+  if (nome) fs.unlink(caminhoUploads('empresas', nome), () => {});
 }
 
 const TIPOS_CANAL = ['MOTOBOY_PROPRIO', 'IFOOD', 'UBER_EATS', 'NOVENTA_NOVE_FOOD'];
