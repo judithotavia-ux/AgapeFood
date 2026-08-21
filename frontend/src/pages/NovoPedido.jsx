@@ -53,10 +53,29 @@ export default function NovoPedido() {
   }, []);
 
   const termo = busca.trim().toLowerCase();
-  const produtosFiltrados = termo ? produtos.filter((p) => p.nome.toLowerCase().includes(termo)) : produtos;
+  const produtosFiltrados = termo
+    ? produtos.filter((p) => p.nome.toLowerCase().includes(termo) || (p.codigoBarras && p.codigoBarras.toLowerCase().includes(termo)))
+    : produtos;
 
   function adicionarAoCarrinho({ produto, quantidade, adicionaisIds, observacoes: obsItem }) {
     setCarrinho((lista) => [...lista, { chave: Date.now() + Math.random(), produto, quantidade, adicionaisIds, observacoes: obsItem }]);
+  }
+
+  // Leitor de codigo de barras USB "digita" os numeros e manda Enter, igual um teclado - nao
+  // precisa de campo separado, so aproveita a mesma busca. Se o produto nao tem adicionais, entra
+  // direto no carrinho (fluxo rapido de "passar e pronto"); se tem, abre o modal pra escolher.
+  function aoTeclarBusca(e) {
+    if (e.key !== 'Enter') return;
+    const codigo = busca.trim();
+    if (!codigo) return;
+    const produto = produtos.find((p) => p.codigoBarras && p.codigoBarras === codigo);
+    if (!produto) return;
+    if (produto.adicionais?.length) {
+      setProdutoSelecionado(produto);
+    } else {
+      adicionarAoCarrinho({ produto, quantidade: 1, adicionaisIds: [], observacoes: '' });
+    }
+    setBusca('');
   }
 
   function removerDoCarrinho(chave) {
@@ -190,8 +209,10 @@ export default function NovoPedido() {
           <input
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            placeholder="🔍 Buscar produto…"
+            onKeyDown={aoTeclarBusca}
+            placeholder="🔍 Buscar produto ou passar leitor de código de barras…"
             style={{ marginBottom: 14 }}
+            autoFocus
           />
 
           {categorias.map((cat) => {
