@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import AdminLayout from '../layouts/AdminLayout';
 import Modal from '../components/Modal';
 import * as caixaService from '../services/caixaService';
@@ -125,11 +126,16 @@ export default function Caixa() {
             Desde {new Date(caixa.abertoEm).toLocaleString('pt-BR')} · Fundo inicial: {fmtPreco(caixa.valorAbertura)}
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <Link to="/pedidos/novo" className="btn" style={{ textDecoration: 'none' }}>🛒 Novo pedido</Link>
           <button className="btn-outline" onClick={() => abrirModalMovimentacao('SANGRIA')}>− Sangria</button>
           <button className="btn-outline" onClick={() => abrirModalMovimentacao('SUPRIMENTO')}>+ Suprimento</button>
           <button className="btn" style={{ background: 'var(--erro)', borderColor: 'var(--erro)', color: '#fff' }} onClick={abrirModalFechar}>Fechar caixa</button>
         </div>
+      </div>
+
+      <div className="card" style={{ marginBottom: 18, fontSize: 12.5, color: 'var(--texto2)' }}>
+        💡 O <strong>Caixa</strong> controla o dinheiro (abertura, sangria, fechamento) — pra bater uma venda e passar os produtos (ou escanear código de barras), use <Link to="/pedidos/novo" style={{ color: 'var(--dourado)' }}>Novo pedido</Link>.
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14, marginBottom: 18 }}>
