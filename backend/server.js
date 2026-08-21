@@ -78,6 +78,12 @@ process.on('uncaughtException', (err) => {
 
 const app = express();
 
+// Atras do proxy do Railway, a conexao real entre o proxy e o container e sempre HTTP - sem isso,
+// req.protocol sempre reporta 'http' mesmo quando o site publico e https, e qualquer URL montada
+// com req.protocol (logo, foto de produto) fica "http://" - o navegador bloqueia como conteudo
+// misto numa pagina https, resultando em imagem quebrada mesmo com o arquivo existindo de verdade.
+app.set('trust proxy', 1);
+
 function origemPermitidaCors(origin, callback) {
   if (origemPermitida(origin)) return callback(null, true);
   callback(new Error('Origem não permitida pelo CORS.'));
