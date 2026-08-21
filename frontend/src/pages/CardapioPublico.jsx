@@ -215,6 +215,23 @@ export default function CardapioPublico() {
           </div>
         ))}
 
+        {dados.promocoes?.length > 0 && (
+          <div style={{ marginTop: 26, display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center' }}>
+            {dados.promocoes.map((p) => (
+              <div key={p.codigo} style={{
+                textAlign: 'center', fontSize: 12.5, padding: '10px 16px', borderRadius: 10,
+                border: `1px dashed ${cor}`, maxWidth: 420
+              }}>
+                {p.texto ? <div style={{ marginBottom: 4 }}>{p.texto}</div> : <div style={{ marginBottom: 4 }}>🎉 Promoção ativa!</div>}
+                <div>
+                  Use o cupom <strong style={{ color: cor }}>{p.codigo}</strong> e ganhe{' '}
+                  {p.tipoDesconto === 'PERCENTUAL' ? `${p.valor}% de desconto` : `${fmtPreco(p.valor)} de desconto`}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         {(dados.empresa.instagram || dados.empresa.facebook || dados.empresa.tiktok || dados.empresa.youtube || dados.empresa.whatsapp) && (
           <div style={{ textAlign: 'center', marginTop: 26, display: 'flex', justifyContent: 'center', gap: 16, fontSize: 13 }}>
             {dados.empresa.whatsapp && <a href={`https://wa.me/55${dados.empresa.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" style={{ color: cor }}>WhatsApp</a>}

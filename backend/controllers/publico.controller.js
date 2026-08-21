@@ -21,6 +21,21 @@ async function cardapio(req, res) {
 
   const configGorjeta = await prisma.configuracaoGorjeta.findUnique({ where: { empresaId: empresa.id } });
 
+  // Cupons ativos e ainda validos, com o texto da campanha ativa vinculada a cada um (se tiver) -
+  // mostrado no rodape do cardapio publico, junto das redes sociais.
+  const cuponsAtivos = await prisma.cupom.findMany({
+    where: {
+      empresaId: empresa.id, ativo: true,
+      OR: [{ validoAte: null }, { validoAte: { gte: new Date() } }]
+    },
+    include: { campanhas: { where: { status: 'ATIVA' }, orderBy: { criadoEm: 'desc' }, take: 1 } },
+    orderBy: { criadoEm: 'desc' },
+    take: 3
+  });
+  const promocoes = cuponsAtivos.map((c) => ({
+    codigo: c.codigo, tipoDesconto: c.tipoDesconto, valor: Number(c.valor), texto: c.campanhas[0]?.texto || null
+  }));
+
   res.json({
     empresa: {
       nome: empresa.nome, slug: empresa.slug,
@@ -32,6 +47,7 @@ async function cardapio(req, res) {
       tiktok: empresa.tiktok, youtube: empresa.youtube, site: empresa.site
     },
     categorias: categorias.filter((c) => c.produtos.length > 0),
+    promocoes,
     gorjeta: configGorjeta?.ativa
       ? {
           ativa: true,
